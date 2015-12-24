@@ -1,1 +1,1 @@
-print 'Hello World'
+require 'irc'
