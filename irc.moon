@@ -1,7 +1,9 @@
-cqueues = require 'cqueues'
-socket  = require 'socket'
+socket  = require 'cqueues.socket'
 
-export IRCConnection
+export IRCConnection, Logger
+
+serve_self =>
+	setmetatable(@, {__call: ()=>pairs(@)})
 
 class IRCConnection
 	new: (server, port=6667, config)=>
@@ -10,9 +12,11 @@ class IRCConnection
 		for k, v in pairs(config)
 			@config[k] = v
 
-		@plugins  = {}
-		@senders  = {}
-		@handlers = {}
+		@handlers = serve_self({})
+		@channels = serve_self({})
+		@senders  = serve_self({})
+		@server   = serve_self({})
+		@users    = serve_self({})
 
 	connect: ()=>
 		if @socket
@@ -23,15 +27,18 @@ class IRCConnection
 		if @config.ssl
 			@socket\starttls!
 
-	send: (...)=>
+	send_raw: (...)=>
 		@socket\send(...)
 
-	parse: (line)=>
+	send: (name, pattern, ...)=>
+		@senders[name] pattern\format ...
+
+	parse: (message)=>
 		prefix_end = 0
 		prefix = nil
 		if message\sub(1, 1) == ":"
-			 prefix_end = message\find " "
-			 prefix = message\sub 2, message\find(" ") - 1
+			prefix_end = message\find " "
+			prefix = message\sub 2, message\find(" ") - 1
 
 		trailing = nil
 		tstart = message\find ":"
@@ -46,7 +53,7 @@ class IRCConnection
 				table.insert t, word
 
 			return t
-			)(message\sub prefix_end + 1, tstart)
+		)(message\sub prefix_end + 1, tstart)
 
 		command = rest[1]
 		table.remove(rest, 1)
@@ -54,11 +61,37 @@ class IRCConnection
 
 	process: (line)=>
 		prefix, command, args, rest = @\parse line
-
 		for name, handler in pairs @handlers
 			pcall handler, @, prefix, command, args, rest
-
-		for name, plugin in pairs @plugins
-			ok, err = coroutine.resume(plugin)
-			if coroutine.status(plugin) == "dead" then
-				@plugins[command][name] = nil
+	
+colors = {
+	[0]: 15, -- white
+	0,  -- black
+	4,  -- blue
+	2,  -- green
+	1,  -- red
+	3,  -- brown
+	5,  -- purple
+	3,  -- orange
+	11, -- yellow
+	10, -- light green
+	6,  -- teal
+	14, -- cyan
+	12, -- light blue
+	13, -- pink
+	8,  -- gray
+	7  -- light gray
+}
+class Logger
+	log: (line)->
+		print(line\gsub('\003(%d%d?),(%d%d?)', (fg, bg)->
+			fg, bg = tonumber(fg), tonumber(bg)
+			if colors[fg] and colors[bg]
+				return '\27[38;5;' .. colors[fg] .. ';48;5;' .. colors[bg] .. 'm'
+		)\gsub('\003(%d%d?)', (fg)->
+			fg = tonumber(fg)
+			if colors[fg]
+				return '\27[38;5;' .. colors[fg] .. 'm'
+		)\gsub('\003', ()->
+			return '\27[0m'
+		) .. '\27[0m')
