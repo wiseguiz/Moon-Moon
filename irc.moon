@@ -90,10 +90,15 @@ class IRCConnection
 		@socket = assert socket.connect{:host, :port}
 		if @config.ssl
 			@socket\starttls!
+		nick = @config.nick or 'Moonmoon'
+		user = @config.username or 'moon'
+		real = @config.realname or 'Moon Moon: MoonScript IRC Bot'
+		@\send_raw ('NICK %s')\format nick
+		@\send_raw ('USER %s * * :%s')\format user, real
 		Logger.log Logger.helpers.okay .. '--- Connected'
 
 	send_raw: (...)=>
-		@socket\send(...)
+		@socket\write table.concat({...}, ' ') .. '\n'
 
 	send: (name, pattern, ...)=>
 		@senders[name] pattern\format ...
@@ -126,8 +131,12 @@ class IRCConnection
 
 	process: (line)=>
 		prefix, command, args, rest = @\parse line
-		for name, handler in pairs @handlers
-			pcall handler, @, prefix, command, args, rest
+		if not @handlers[command]
+			return
+		for _, handler in pairs @handlers[command]
+			ok, err = pcall handler, @, prefix, args, rest
+			if not ok
+				Logger.log Logger.helpers.warn .. ' *** ' .. err
 	
 	loop: ()=>
 		local line
@@ -136,8 +145,8 @@ class IRCConnection
 
 		Logger.log Logger.helpers.okay .. '--- Starting receiving loop'
 		for received_line in @socket\lines! do
-			Logger.log Logger.helpers.okay .. '--- Received line'
+			Logger.log Logger.helpers.okay .. '--- Received line: ' .. received_line
 			line = received_line
-			xpcall @process, print_error, @, line
+			xpcall @process, print_error, @, received_line
 
 return :IRCConnection, :Logger
