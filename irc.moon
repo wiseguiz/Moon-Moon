@@ -1,6 +1,51 @@
-socket  = require 'cqueues.socket'
+socket = require 'cqueues.socket'
 
-export IRCConnection, Logger
+colors = {
+	[0]:  15, -- white
+	[1]:  0,  -- black
+	[2]:  4,  -- blue
+	[3]:  2,  -- green
+	[4]:  1,  -- red
+	[5]:  3,  -- brown
+	[6]:  5,  -- purple
+	[7]:  3,  -- orange
+	[8]:  11, -- yellow
+	[9]:  10, -- light green
+	[10]: 6,  -- teal
+	[11]: 14, -- cyan
+	[12]: 12, -- light blue
+	[13]: 13, -- pink
+	[14]: 8,  -- gray
+	[15]: 7  -- light gray
+}
+class Logger
+	helpers: {
+		error: '\00304',
+		warn:  '\00308',
+		okay:  '\00303'
+	}
+	print_bare: (line)->
+		print(line\gsub('\003(%d%d?),(%d%d?)', (fg, bg)->
+			fg, bg = tonumber(fg), tonumber(bg)
+			if colors[fg] and colors[bg]
+				return '\27[38;5;' .. colors[fg] .. ';48;5;' .. colors[bg] .. 'm'
+		)\gsub('\003(%d%d?)', (fg)->
+			fg = tonumber(fg)
+			if colors[fg]
+				return '\27[38;5;' .. colors[fg] .. 'm'
+		)\gsub('\003', ()->
+			return '\27[0m'
+		) .. '\27[0m')
+	log: (line, color)->
+		if color == false
+			Logger.print_bare os.date('[%X] ' .. line)
+		else
+			Logger.print_bare os.date('[%X]')\gsub('.', (ch)->
+				if ch\match '[%[%]:]'
+					return '\00311' .. ch .. '\003'
+				else
+					return '\00315' .. ch .. '\003'
+			) .. ' ' .. line
 
 serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 
@@ -41,9 +86,11 @@ class IRCConnection
 			@socket\shutdown!
 		host = @config.server
 		port = @config.port
+		Logger.log Logger.helpers.warn .. '--- Connecting'
 		@socket = assert socket.connect{:host, :port}
 		if @config.ssl
 			@socket\starttls!
+		Logger.log Logger.helpers.okay .. '--- Connected'
 
 	send_raw: (...)=>
 		@socket\send(...)
@@ -82,44 +129,15 @@ class IRCConnection
 		for name, handler in pairs @handlers
 			pcall handler, @, prefix, command, args, rest
 	
-colors = {
-	[0]: 15, -- white
-	0,  -- black
-	4,  -- blue
-	2,  -- green
-	1,  -- red
-	3,  -- brown
-	5,  -- purple
-	3,  -- orange
-	11, -- yellow
-	10, -- light green
-	6,  -- teal
-	14, -- cyan
-	12, -- light blue
-	13, -- pink
-	8,  -- gray
-	7  -- light gray
-}
-class Logger
-	print_bare: (line)->
-		print(line\gsub('\003(%d%d?),(%d%d?)', (fg, bg)->
-			fg, bg = tonumber(fg), tonumber(bg)
-			if colors[fg] and colors[bg]
-				return '\27[38;5;' .. colors[fg] .. ';48;5;' .. colors[bg] .. 'm'
-		)\gsub('\003(%d%d?)', (fg)->
-			fg = tonumber(fg)
-			if colors[fg]
-				return '\27[38;5;' .. colors[fg] .. 'm'
-		)\gsub('\003', ()->
-			return '\27[0m'
-		) .. '\27[0m')
-	log: (line, color)->
-		if color == false
-			Logger.print_bare os.date('[%X] ' .. line)
-		else
-			Logger.print_bare os.date('[%X]')\gsub('.', (ch)->
-				if ch\match '[%[%]:]'
-					return '\00311' .. ch .. '\003'
-				else
-					return '\00315' .. ch .. '\003'
-			) .. ' ' .. line
+	loop: ()=>
+		local line
+		print_error =(err)->
+			Logger.log "Error: " .. err .. " (" .. line .. ")"
+
+		Logger.log Logger.helpers.okay .. '--- Starting receiving loop'
+		for received_line in @socket\lines! do
+			Logger.log Logger.helpers.okay .. '--- Received line'
+			line = received_line
+			xpcall @process, print_error, @, line
+
+return :IRCConnection, :Logger
