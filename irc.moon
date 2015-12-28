@@ -2,21 +2,39 @@ socket  = require 'cqueues.socket'
 
 export IRCConnection, Logger
 
-serve_self =>
-	setmetatable(@, {__call: ()=>pairs(@)})
+serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 
 class IRCConnection
-	new: (server, port=6667, config)=>
+	new: (server, port=6667, config={})=>
 		assert(server)
 		@config = :server, :port, :config
 		for k, v in pairs(config)
 			@config[k] = v
 
-		@handlers = serve_self({})
 		@channels = serve_self({})
-		@senders  = serve_self({})
-		@server   = serve_self({})
 		@users    = serve_self({})
+
+		@handlers = {}
+		@senders  = {}
+		@server   = {}
+	
+	add_handler: (id, handler)=>
+		if not @handlers[id]
+			@handlers[id] = {handler}
+		else
+			table.insert @handlers[id], handler
+	
+	add_sender: (id, sender)=>
+		assert not @senders[id], "Sender already exists: " .. id
+		@senders[id] = sender
+	
+	load_modules: (modules)=>
+		if modules.senders
+			for id, sender in pairs modules.senders
+				@\add_sender id, sender
+		if modules.handlers
+			for id, handler in pairs modules.handlers
+				@\add_handler id, handler
 
 	connect: ()=>
 		if @socket
@@ -83,7 +101,7 @@ colors = {
 	7  -- light gray
 }
 class Logger
-	log: (line)->
+	print_bare: (line)->
 		print(line\gsub('\003(%d%d?),(%d%d?)', (fg, bg)->
 			fg, bg = tonumber(fg), tonumber(bg)
 			if colors[fg] and colors[bg]
@@ -95,3 +113,13 @@ class Logger
 		)\gsub('\003', ()->
 			return '\27[0m'
 		) .. '\27[0m')
+	log: (line, color)->
+		if color == false
+			Logger.print_bare os.date('[%X] ' .. line)
+		else
+			Logger.print_bare os.date('[%X]')\gsub('.', (ch)->
+				if ch\match '[%[%]:]'
+					return '\00311' .. ch .. '\003'
+				else
+					return '\00315' .. ch .. '\003'
+			) .. ' ' .. line
