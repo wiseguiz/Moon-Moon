@@ -21,6 +21,7 @@ colors = {
 class Logger
 	helpers: {
 		error: '\00304',
+		reset: '\003',
 		warn:  '\00308',
 		okay:  '\00303'
 	}
@@ -36,16 +37,13 @@ class Logger
 		)\gsub('\003', ()->
 			return '\27[0m'
 		) .. '\27[0m')
-	log: (line, color)->
-		if color == false
-			Logger.print_bare os.date('[%X] ' .. line)
-		else
-			Logger.print_bare os.date('[%X]')\gsub('.', (ch)->
-				if ch\match '[%[%]:]'
-					return '\00311' .. ch .. '\003'
-				else
-					return '\00315' .. ch .. '\003'
-			) .. ' ' .. line
+	log: (line)->
+		Logger.print_bare os.date('[%X]')\gsub('.', (ch)->
+			if ch\match '[%[%]:]'
+				return '\00311' .. ch .. '\003'
+			else
+				return '\00315' .. ch .. '\003'
+		) .. ' ' .. line
 
 serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 
@@ -86,8 +84,9 @@ class IRCConnection
 			@socket\shutdown!
 		host = @config.server
 		port = @config.port
-		Logger.log Logger.helpers.warn .. '--- Connecting'
+		Logger.log Logger.helpers.warn .. '--- Connecting...'
 		@socket = assert socket.connect{:host, :port}
+		Logger.log Logger.helpers.okay .. '--- Connected'
 		if @config.ssl
 			@socket\starttls!
 		nick = @config.nick or 'Moonmoon'
@@ -95,7 +94,7 @@ class IRCConnection
 		real = @config.realname or 'Moon Moon: MoonScript IRC Bot'
 		@\send_raw ('NICK %s')\format nick
 		@\send_raw ('USER %s * * :%s')\format user, real
-		Logger.log Logger.helpers.okay .. '--- Connected'
+		Logger.log Logger.helpers.okay .. '--- Sent authentication data'
 
 	send_raw: (...)=>
 		@socket\write table.concat({...}, ' ') .. '\n'
@@ -113,7 +112,7 @@ class IRCConnection
 		trailing = nil
 		tstart = message\find ":"
 		if tstart
-			trailing = message\sub tstart + 2
+			trailing = message\sub tstart + 1
 		else
 			tstart = #message
 
@@ -143,9 +142,7 @@ class IRCConnection
 		print_error =(err)->
 			Logger.log "Error: " .. err .. " (" .. line .. ")"
 
-		Logger.log Logger.helpers.okay .. '--- Starting receiving loop'
 		for received_line in @socket\lines! do
-			Logger.log Logger.helpers.okay .. '--- Received line: ' .. received_line
 			line = received_line
 			xpcall @process, print_error, @, received_line
 
