@@ -21,7 +21,7 @@ for file in $(find . -type f -name "*.moon"); do
 			moonc -p $file | luac -o $luafile -
 			echo "Built $file"
 		else
-			moonc $file -o $luafile
+			moonc -o $luafile $file
 		fi
 		has_compiled=true
 	fi
