@@ -1,11 +1,26 @@
 import IRCConnection, Logger from require 'irc'
 cqueues = require 'cqueues'
+lfs     = require 'lfs'
+
+mods = {}
+for file in lfs.dir 'plugins'
+	if file\match "%.lua$"
+		func = assert loadfile 'plugins/' .. file
+		table.insert mods, func!
 
 stack = cqueues.new!
 
--- ::TODO:: remove this section later
+--[[ ::TODO::
+-- Remove this section later;
+-- loop through config.ini
+-- for a list of IRC bots.
+-- ]]
 
 bot = IRCConnection 'irc.esper.net'
 bot\connect!
-stack\wrap ->bot\loop
-stack\loop!
+for _, mod in pairs(mods)
+	bot\load_modules mod
+stack\wrap -> bot\loop!
+
+while not stack\empty!
+	assert stack\step!
