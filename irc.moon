@@ -45,17 +45,12 @@ class Logger
 				return '\00315' .. ch .. '\003'
 		) .. ' ' .. line
 
-serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
-
 class IRCConnection
 	new: (server, port=6667, config={})=>
 		assert(server)
 		@config = :server, :port, :config
 		for k, v in pairs(config)
 			@config[k] = v
-
-		@channels = serve_self({})
-		@users    = serve_self({})
 
 		@handlers = {}
 		@senders  = {}
