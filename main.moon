@@ -8,19 +8,29 @@ for file in lfs.dir 'plugins'
 		func = assert loadfile 'plugins/' .. file
 		table.insert mods, func!
 
-stack = cqueues.new!
+main = (queue = require 'queue')->
 
---[[ ::TODO::
--- Remove this section later;
--- loop through config.ini
--- for a list of IRC bots.
--- ]]
+	for file in lfs.dir 'configs'
+		if file\match "%.ini$"
+			data = {}
+			for line in io.lines('configs/' .. file)
+				key, value = assert line\match "^(.-)=(.+)$"
+				data[key] = value
+			bot  = IRCConnection data.host, data.port, data
 
-bot = IRCConnection 'irc.esper.net'
-bot\connect!
-for _, mod in pairs(mods)
-	bot\load_modules mod
-stack\wrap -> bot\loop!
+			bot\connect!
+			for _, mod in pairs(mods)
+				bot\load_modules mod
 
-while not stack\empty!
-	assert stack\step!
+			queue\wrap -> bot\loop!
+
+fw, err = pcall(require, 'astronomy')
+if not fw then
+	queue = cqueues.new!
+	package.loaded['queue'] = queue
+	main!
+	while not queue\empty!
+		assert queue\step!
+
+else
+	fw.wrap main
