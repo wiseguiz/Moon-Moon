@@ -8,7 +8,7 @@ for file in lfs.dir 'plugins'
 		func = assert loadfile 'plugins/' .. file
 		table.insert mods, func!
 
-stack = cqueues.new!
+queue = cqueues.new!
 
 --[[ ::TODO::
 -- Remove this section later;
@@ -20,7 +20,7 @@ bot = IRCConnection 'irc.esper.net'
 bot\connect!
 for _, mod in pairs(mods)
 	bot\load_modules mod
-stack\wrap -> bot\loop!
+queue\wrap -> bot\loop!
 
-while not stack\empty!
-	assert stack\step!
+while not queue\empty!
+	assert queue\step!

@@ -55,16 +55,16 @@ advantages:
  2. No callbacks
  3. Cleaner code base
 
-Adding in a routine to the stack is simple, as demonstrated by the below
+Adding in a routine to the queue is simple, as demonstrated by the below
 examples programmed in MoonScript and Lua for convenience:
 
 **MoonScript**
 
 ```moonscript
 cqueues = require 'cqueues'
-stack   = require 'stack'
+queue   = require 'queue'
 
-stack\wrap ->
+queue\wrap ->
 	while true
 		cqueues.sleep 5
 		print 'Hello, World!'
@@ -74,8 +74,8 @@ stack\wrap ->
 
 ```lua
 local cqueues = require("cqueues")
-local stack   = require("stack")
-stack:wrap(function()
+local queue   = require("queue")
+queue:wrap(function()
 	while true do
 		cqueues.sleep(5)
 		print("Hello, World!")
