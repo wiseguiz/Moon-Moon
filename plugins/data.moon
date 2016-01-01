@@ -11,7 +11,7 @@ handlers:
 	['005']: (prefix, args)=>
 		-- Capabilities
 		for _, cap in pairs args
-			if v\find "="
+			if cap\find "="
 				key, value = cap\match '^(.-)=(.+)'
 				@server.caps[key] = value
 			else
@@ -19,10 +19,11 @@ handlers:
 	['JOIN']: (prefix, args, trail)=>
 		-- user JOINs a channel
 		channel = trail or args[1]
+		nick, username, host = prefix\match '^(.-)!(.-)@(.-)$'
 		if prefix\match '^.-!.-@.-$'
 			nick, username, host = prefix\match '^(.-)!(.-)@(.-)$'
-			if not users[nick] then
-				users[nick] = {
+			if not @users[nick] then
+				@users[nick] = {
 					channels: {
 						[channel]: {
 							status: ""
@@ -32,20 +33,20 @@ handlers:
 					:host
 				}
 			else
-				if users[nick].channels
-					users[nick].channels[channel] = {
+				if @users[nick].channels
+					@users[nick].channels[channel] = {
 						status: ""
 					}
 				else
-					users[nick].channels = {
+					@users[nick].channels = {
 						[channel]: {
 							status: ""
 						}
 					}
-		if not channels[channel]
-			channels[channel] = {
+		if not @channels[channel]
+			@channels[channel] = {
 				users: {
-					[nick]: users[nick]
+					[nick]: @users[nick]
 				}
 			}
 	['MODE']: (prefix, args)=>
@@ -62,18 +63,28 @@ handlers:
 				status, nick = text\match '^(.)(.+)'
 			else
 				status, nick = '', text
-			if channels[channel].users[nick]
-				if users[nick].channels[channel]
-					users[nick].channels[channel].status = status
+			if @channels[channel].users[nick]
+				if @users[nick].channels[channel]
+					@users[nick].channels[channel].status = status
 				else
-					users[ncik].channels[channel] = :status
+					@users[nick].channels[channel] = :status
 			else
-				channels[channel].users[nick] = {
+				@channels[channel].users[nick] = {
 					channels: {
 						[channel]: :status
 					}
 				}
 	['PART']: (prefix, args)=>
 		-- User or bot parted channel, clear from lists
+		channel = args[1]
+		nick = prefix\match '^(.-)!'
+		@users[nick].channels[channel] = nil
+		if #@users[nick].channels == 0
+			@users[nick] = nil -- User left network, garbagecollect
 	['QUIT']: (prefix, args)=>
 		-- User or bot parted network, nuke from lists
+		channel = args[1]
+		nick = prefix\match '^(.-)!'
+		for channel in @users[nick].channels do
+			@channels[channel].users[nick] = nil
+		@users[nick] = nil
