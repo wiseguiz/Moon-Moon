@@ -105,7 +105,7 @@ class IRCConnection
 			prefix = message\sub 2, message\find(" ") - 1
 
 		trailing = nil
-		tstart = message\find ":"
+		tstart = message\find " :"
 		if tstart
 			trailing = message\sub tstart + 1
 		else

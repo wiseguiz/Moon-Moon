@@ -1,10 +1,10 @@
 has_compiled=false
-is_double_compiling=true
+is_binary=false
 is_forcing=false
 for arg in $*; do
 	case $arg in
-		-no-double-compile)
-			is_double_compiling=false
+		-binary)
+			is_binary=true
 			;;
 		-force-compile)
 			is_forcing=true
@@ -17,7 +17,7 @@ for file in $(find . -type f -name "*.moon"); do
 		if ! $has_compiled; then
 			printf "\n"
 		fi
-		if $is_double_compiling; then
+		if $is_binary; then
 			moonc -p $file | luac -o $luafile -
 			echo "Built $file"
 		else

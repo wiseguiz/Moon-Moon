@@ -51,12 +51,13 @@ handlers:
 			}
 	['MODE']: (prefix, args)=>
 		-- User or bot called /mode
-		@\send_raw ('NAMES')\format args[1]
+		if prefix[1] == "#"
+			@\send_raw ('NAMES')\format args[1]
 	['353']: (prefix, args, trail)=>
 		-- Result of NAMES
 		channel = args[3]
 		statuses = @server.caps.PREFIX and @server.caps.PREFIX\match '%(.-%)(.+)' or "+@"
-		statuses = "^[" .. statuses\gsub "%[%]%(%)%.%+%-%*%?%^%$%%", "%%%1" .. "]"
+		statuses = "^[" .. statuses\gsub("%[%]%(%)%.%+%-%*%?%^%$%%", "%%%1") .. "]"
 		for text in trail\gmatch '%S+'
 			local status, nick
 			if text\match statuses

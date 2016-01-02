@@ -24,8 +24,8 @@ main = (queue = require 'queue')->
 
 			queue\wrap -> bot\loop!
 
-fw, err = pcall(require, 'astronomy')
-if not fw then
+success, fw = pcall require, 'astronomy'
+if not success then
 	queue = cqueues.new!
 	package.loaded['queue'] = queue
 	main!
