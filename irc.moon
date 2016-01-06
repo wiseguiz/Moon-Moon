@@ -127,6 +127,15 @@ class IRCConnection
 		prefix, command, args, rest = @\parse line
 		if not @handlers[command]
 			return
+		if os.getenv 'IRC_DEBUG'
+			Logger.log Logger.helpers.okay .. ' --- | Running trigger: ' .. command
+			Logger.log Logger.helpers.okay .. ' --- |\\ Line: ' .. line
+			if prefix
+				Logger.log Logger.helpers.okay .. ' --- |\\ Prefix: ' .. prefix
+			if #args > 0
+				Logger.log Logger.helpers.okay .. ' --- |\\ Arguments: ' .. table.concat(args, ', ')
+			if rest
+				Logger.log Logger.helpers.okay .. ' ---  \\ Trailing: ' .. rest
 		for _, handler in pairs @handlers[command]
 			ok, err = pcall handler, @, prefix, args, rest
 			if not ok
