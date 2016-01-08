@@ -1,4 +1,5 @@
-import IRCConnection, Logger from require 'irc'
+IRCConnection = require 'irc'
+Logger = require 'logger'
 cqueues = require 'cqueues'
 lfs     = require 'lfs'
 
@@ -28,6 +29,10 @@ success, fw = pcall require, 'astronomy'
 if not success then
 	queue = cqueues.new!
 	package.loaded['queue'] = queue
+	if os.getenv 'DEBUG'
+		Logger.print 'Loading debug module'
+		Logger.set_debug true
+		Logger.debug 'Loaded debug module'
 	main!
 	while not queue\empty!
 		assert queue\step!
