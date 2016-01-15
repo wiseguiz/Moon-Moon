@@ -93,18 +93,16 @@ do
       if not self.handlers[command] then
         return 
       end
-      if os.getenv('IRC_DEBUG') then
-        Logger.debug(Logger.level.okay .. ' --- | Running trigger: ' .. command)
-        Logger.debug(Logger.level.okay .. ' --- |\\ Line: ' .. line)
-        if prefix then
-          Logger.debug(Logger.level.okay .. ' --- |\\ Prefix: ' .. prefix)
-        end
-        if #args > 0 then
-          Logger.debug(Logger.level.okay .. ' --- |\\ Arguments: ' .. table.concat(args, ', '))
-        end
-        if rest then
-          Logger.debug(Logger.level.okay .. ' ---  \\ Trailing: ' .. rest)
-        end
+      Logger.debug(Logger.level.okay .. ' --- | Running trigger: ' .. Logger.level.warn .. command)
+      Logger.debug(Logger.level.okay .. ' --- |\\ Line: ' .. line)
+      if prefix then
+        Logger.debug(Logger.level.okay .. ' --- |\\ Prefix: ' .. prefix)
+      end
+      if #args > 0 then
+        Logger.debug(Logger.level.okay .. ' --- |\\ Arguments: ' .. table.concat(args, ', '))
+      end
+      if rest then
+        Logger.debug(Logger.level.okay .. ' ---  \\ Trailing: ' .. rest)
       end
       for _, handler in pairs(self.handlers[command]) do
         local ok, err = pcall(handler, self, prefix, args, rest)
