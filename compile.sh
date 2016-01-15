@@ -1,8 +1,24 @@
-if which mcpp >&-; then
+if which mcpp >/dev/null; then
 	CPP="mcpp -P"
-else
+elif which filepp >/dev/null; then
+	CPP="filepp -c"
+elif which cpp >/dev/null; then
 	CPP="cpp -P"
+else
+	echo "No C preprocessor found"
+	exit 1
 fi
+testfunc(){
+	if ! which $1 >/dev/null; then
+		echo "$1 not found"
+		exit 1
+	fi
+}
+
+for func in moonc luac; do
+	testfunc $func
+done
+
 has_compiled=false
 is_binary=false
 is_forcing=false
