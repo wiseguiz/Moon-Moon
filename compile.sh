@@ -1,3 +1,8 @@
+if which mcpp >&-; then
+	CPP="mcpp -P"
+else
+	CPP="cpp -P"
+fi
 has_compiled=false
 is_binary=false
 is_forcing=false
@@ -18,11 +23,11 @@ for file in $(find . -type f -name "*.moon"); do
 			printf "\n"
 		fi
 		if $is_binary; then
-			moonc -p $file | luac -o $luafile -
-			echo "Built $file"
+			$CPP $file | moonc -- | luac -o $luafile -
 		else
-			moonc -o $luafile $file
+			$CPP $file | moonc -- > $luafile
 		fi
+		echo "Built $file"
 		has_compiled=true
 	fi
 done
