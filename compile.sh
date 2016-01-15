@@ -1,6 +1,4 @@
-if which mcpp >/dev/null; then
-	CPP="mcpp -P"
-elif which filepp >/dev/null; then
+if which filepp >/dev/null; then
 	CPP="filepp -c"
 elif which cpp >/dev/null; then
 	CPP="cpp -P"
