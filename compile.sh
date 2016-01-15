@@ -1,5 +1,5 @@
 if which filepp; then
-	CPP="filepp -c"
+	CPP="filepp"
 elif which cpp; then
 	CPP="cpp -P"
 else
@@ -37,6 +37,7 @@ for file in $(find . -type f -name "*.moon"); do
 		if ! $has_compiled; then
 			printf "\n"
 		fi
+		echo "Building $file"
 		if $is_binary; then
 			$CPP $file | moonc -- | luac -o $luafile -
 		else

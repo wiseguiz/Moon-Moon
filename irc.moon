@@ -87,15 +87,14 @@ class IRCConnection
 		prefix, command, args, rest = @\parse line
 		if not @handlers[command]
 			return
-		if os.getenv 'IRC_DEBUG'
-			Logger.debug Logger.level.okay .. ' --- | Running trigger: ' .. command
-			Logger.debug Logger.level.okay .. ' --- |\\ Line: ' .. line
-			if prefix
-				Logger.debug Logger.level.okay .. ' --- |\\ Prefix: ' .. prefix
-			if #args > 0
-				Logger.debug Logger.level.okay .. ' --- |\\ Arguments: ' .. table.concat(args, ', ')
-			if rest
-				Logger.debug Logger.level.okay .. ' ---  \\ Trailing: ' .. rest
+		Logger.debug Logger.level.okay .. ' --- | Running trigger: ' .. Logger.level.warn .. command
+		Logger.debug Logger.level.okay .. ' --- |\\ Line: ' .. line
+		if prefix
+			Logger.debug Logger.level.okay .. ' --- |\\ Prefix: ' .. prefix
+		if #args > 0
+			Logger.debug Logger.level.okay .. ' --- |\\ Arguments: ' .. table.concat(args, ', ')
+		if rest
+			Logger.debug Logger.level.okay .. ' ---  \\ Trailing: ' .. rest
 		for _, handler in pairs @handlers[command]
 			ok, err = pcall handler, @, prefix, args, rest
 			if not ok
