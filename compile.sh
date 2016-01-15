@@ -1,13 +1,14 @@
-if which filepp >/dev/null; then
+if which filepp; then
 	CPP="filepp -c"
-elif which cpp >/dev/null; then
+elif which cpp; then
 	CPP="cpp -P"
 else
 	echo "No C preprocessor found"
 	exit 1
 fi
+echo $CPP
 testfunc(){
-	if ! which $1 >/dev/null; then
+	if ! which $1; then
 		echo "$1 not found"
 		exit 1
 	fi
