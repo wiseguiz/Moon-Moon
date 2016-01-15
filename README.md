@@ -44,6 +44,12 @@ $ luarocks install luafilesystem
 $ luarocks install moonscript # Optional
 ```
 
+### Installing [Modules](https://chickennuggers.github.io/Moon-Modules)
+
+Refer to the guide [here](https://chickennuggers.github.io/Moon-Modules]
+to install submodules; alternatively, just place modules in the `modules`
+folder.
+
 ## The Coroutine System
 
 Moon Moon takes advantage of a coroutine-based asynchronous system which
