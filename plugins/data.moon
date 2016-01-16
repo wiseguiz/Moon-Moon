@@ -48,7 +48,7 @@ handlers:
 	['MODE']: (prefix, args)=>
 		-- User or bot called /mode
 		if prefix[1] == "#"
-			@\send_raw ('NAMES')\format args[1]
+			@send_raw ('NAMES')\format args[1]
 	['353']: (prefix, args, trail)=>
 		-- Result of NAMES
 		channel = args[3]
