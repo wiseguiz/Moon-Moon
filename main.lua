@@ -46,5 +46,6 @@ if not success then
     assert(queue:step())
   end
 else
+  package.loaded['queue'] = fw
   return fw:wrap(main)
 end
