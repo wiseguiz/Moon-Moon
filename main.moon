@@ -9,21 +9,26 @@ for file in lfs.dir 'plugins'
 		func = assert loadfile 'plugins/' .. file
 		table.insert mods, func!
 
+bots = {}
+for file in lfs.dir 'configs'
+	if file\match "%.ini$"
+		data = {
+			dir: lfs.currentdir!
+		}
+		for line in io.lines('configs/' .. file)
+			key, value = assert line\match "^(.-)=(.+)$"
+			data[key] = value
+		bot  = IRCConnection data.host, data.port, data
+
+		bot\connect!
+		for _, mod in pairs(mods)
+			bot\load_modules mod
+
+		table.insert(bots, bot)
+
 main = (queue = require 'queue')->
-
-	for file in lfs.dir 'configs'
-		if file\match "%.ini$"
-			data = {}
-			for line in io.lines('configs/' .. file)
-				key, value = assert line\match "^(.-)=(.+)$"
-				data[key] = value
-			bot  = IRCConnection data.host, data.port, data
-
-			bot\connect!
-			for _, mod in pairs(mods)
-				bot\load_modules mod
-
-			queue\wrap -> bot\loop!
+	for _, bot in pairs bots
+		queue\wrap -> bot\loop!
 
 success, fw = pcall require, 'astronomy'
 if not success then

@@ -9,27 +9,33 @@ for file in lfs.dir('plugins') do
     table.insert(mods, func())
   end
 end
+local bots = { }
+for file in lfs.dir('configs') do
+  if file:match("%.ini$") then
+    local data = {
+      dir = lfs.currentdir()
+    }
+    for line in io.lines('configs/' .. file) do
+      local key, value = assert(line:match("^(.-)=(.+)$"))
+      data[key] = value
+    end
+    local bot = IRCConnection(data.host, data.port, data)
+    bot:connect()
+    for _, mod in pairs(mods) do
+      bot:load_modules(mod)
+    end
+    table.insert(bots, bot)
+  end
+end
 local main
 main = function(queue)
   if queue == nil then
     queue = require('queue')
   end
-  for file in lfs.dir('configs') do
-    if file:match("%.ini$") then
-      local data = { }
-      for line in io.lines('configs/' .. file) do
-        local key, value = assert(line:match("^(.-)=(.+)$"))
-        data[key] = value
-      end
-      local bot = IRCConnection(data.host, data.port, data)
-      bot:connect()
-      for _, mod in pairs(mods) do
-        bot:load_modules(mod)
-      end
-      queue:wrap(function()
-        return bot:loop()
-      end)
-    end
+  for _, bot in pairs(bots) do
+    queue:wrap(function()
+      return bot:loop()
+    end)
   end
 end
 local success, fw = pcall(require, 'astronomy')
