@@ -38,4 +38,5 @@ if not success then
 		assert queue\step!
 
 else
+	package.loaded['queue'] = fw
 	fw\wrap main
