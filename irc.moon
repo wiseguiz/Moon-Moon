@@ -38,14 +38,15 @@ class IRCConnection
 		debug_msg = ('Connecting... {host: "%s", port: "%s"}')\format host, port
 		Logger.debug debug_msg, Logger.level.warn .. '--- Connecting...'
 		@socket = assert socket.connect{:host, :port}
-		Logger.print Logger.level.okay .. '--- Connected'
 		if @config.ssl
 			Logger.debug 'Starting TLS exchange...'
 			@socket\starttls!
 			Logger.debug 'Started TLS exchange'
+		Logger.print Logger.level.okay .. '--- Connected'
 		nick = @config.nick or 'Moonmoon'
 		user = @config.username or 'moon'
 		real = @config.realname or 'Moon Moon: MoonScript IRC Bot'
+		Logger.print Logger.level.warn .. '--- Sending authentication data'
 		@\send_raw ('NICK %s')\format nick
 		@\send_raw ('USER %s * * :%s')\format user, real
 		debug_msg = ('Sent authentication data: {nickname: %s, username: %s, realname: %s}')\format nick, user, real

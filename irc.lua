@@ -41,15 +41,16 @@ do
         host = host,
         port = port
       }))
-      Logger.print(Logger.level.okay .. '--- Connected')
       if self.config.ssl then
         Logger.debug('Starting TLS exchange...')
         self.socket:starttls()
         Logger.debug('Started TLS exchange')
       end
+      Logger.print(Logger.level.okay .. '--- Connected')
       local nick = self.config.nick or 'Moonmoon'
       local user = self.config.username or 'moon'
       local real = self.config.realname or 'Moon Moon: MoonScript IRC Bot'
+      Logger.print(Logger.level.warn .. '--- Sending authentication data')
       self:send_raw(('NICK %s'):format(nick))
       self:send_raw(('USER %s * * :%s'):format(user, real))
       debug_msg = ('Sent authentication data: {nickname: %s, username: %s, realname: %s}'):format(nick, user, real)
