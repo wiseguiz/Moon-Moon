@@ -38,4 +38,4 @@ if not success then
 		assert queue\step!
 
 else
-	fw.wrap main
+	fw\wrap main

@@ -46,5 +46,5 @@ if not success then
     assert(queue:step())
   end
 else
-  return fw.wrap(main)
+  return fw:wrap(main)
 end
