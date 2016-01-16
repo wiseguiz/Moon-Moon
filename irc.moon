@@ -25,10 +25,10 @@ class IRCConnection
 	load_modules: (modules)=>
 		if modules.senders
 			for id, sender in pairs modules.senders
-				@\add_sender id, sender
+				@add_sender id, sender
 		if modules.handlers
 			for id, handler in pairs modules.handlers
-				@\add_handler id, handler
+				@add_handler id, handler
 
 	connect: ()=>
 		if @socket
@@ -47,8 +47,8 @@ class IRCConnection
 		user = @config.username or 'moon'
 		real = @config.realname or 'Moon Moon: MoonScript IRC Bot'
 		Logger.print Logger.level.warn .. '--- Sending authentication data'
-		@\send_raw ('NICK %s')\format nick
-		@\send_raw ('USER %s * * :%s')\format user, real
+		@send_raw ('NICK %s')\format nick
+		@send_raw ('USER %s * * :%s')\format user, real
 		debug_msg = ('Sent authentication data: {nickname: %s, username: %s, realname: %s}')\format nick, user, real
 		Logger.debug debug_msg, Logger.level.okay .. '--- Sent authentication data'
 
@@ -85,7 +85,7 @@ class IRCConnection
 		return prefix, command, rest, trailing
 
 	process: (line)=>
-		prefix, command, args, rest = @\parse line
+		prefix, command, args, rest = @parse line
 		if not @handlers[command]
 			return
 		Logger.debug Logger.level.okay .. ' --- | Running trigger: ' .. Logger.level.warn .. command
