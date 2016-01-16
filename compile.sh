@@ -6,7 +6,6 @@ else
 	echo "No C preprocessor found"
 	exit 1
 fi
-echo $CPP
 testfunc(){
 	if ! which $1; then
 		echo "$1 not found"
