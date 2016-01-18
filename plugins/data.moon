@@ -1,3 +1,5 @@
+Logger = require 'logger'
+
 serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 
 handlers:
@@ -47,8 +49,8 @@ handlers:
 			}
 	['MODE']: (prefix, args)=>
 		-- User or bot called /mode
-		if prefix[1] == "#"
-			@send_raw ('NAMES')\format args[1]
+		if args[1]\sub(1,1) == "#"
+			@send_raw ('NAMES %s')\format args[1]
 	['353']: (prefix, args, trail)=>
 		-- Result of NAMES
 		channel = args[3]
@@ -60,17 +62,22 @@ handlers:
 				status, nick = text\match '^(.)(.+)'
 			else
 				status, nick = '', text
+			if not @users[nick]
+				@users[nick] = {channels: {}}
 			if @channels[channel].users[nick]
 				if @users[nick].channels[channel]
 					@users[nick].channels[channel].status = status
 				else
 					@users[nick].channels[channel] = :status
 			else
-				@channels[channel].users[nick] = {
-					channels: {
-						[channel]: :status
-					}
-				}
+				@channels[channel].users[nick] = @users[nick]
+				@users[nick].channels[channel] = :status
+	['KICK']: (prefix, args)=>
+		channel = args[1]
+		nick = args[2]
+		@users[nick].channesl[channel] = nil
+		if #@users[nick].channels == 0
+			@users[nick] = nil
 	['PART']: (prefix, args)=>
 		-- User or bot parted channel, clear from lists
 		channel = args[1]

@@ -74,7 +74,7 @@ do
       local trailing = nil
       local tstart = message:find(" :")
       if tstart then
-        trailing = message:sub(tstart + 1)
+        trailing = message:sub(tstart + 2)
       else
         tstart = #message
       end
@@ -91,24 +91,24 @@ do
     end,
     process = function(self, line)
       local prefix, command, args, rest = self:parse(line)
+      Logger.debug(Logger.level.warn .. '--- | Line: ' .. line)
       if not self.handlers[command] then
         return 
       end
-      Logger.debug(Logger.level.okay .. ' --- | Running trigger: ' .. Logger.level.warn .. command)
-      Logger.debug(Logger.level.okay .. ' --- |\\ Line: ' .. line)
+      Logger.debug(Logger.level.okay .. '--- |\\ Running trigger: ' .. Logger.level.warn .. command)
       if prefix then
-        Logger.debug(Logger.level.okay .. ' --- |\\ Prefix: ' .. prefix)
+        Logger.debug(Logger.level.okay .. '--- |\\ Prefix: ' .. prefix)
       end
       if #args > 0 then
-        Logger.debug(Logger.level.okay .. ' --- |\\ Arguments: ' .. table.concat(args, ', '))
+        Logger.debug(Logger.level.okay .. '--- |\\ Arguments: ' .. table.concat(args, ', '))
       end
       if rest then
-        Logger.debug(Logger.level.okay .. ' ---  \\ Trailing: ' .. rest)
+        Logger.debug(Logger.level.okay .. '---  \\ Trailing: ' .. rest)
       end
       for _, handler in pairs(self.handlers[command]) do
         local ok, err = pcall(handler, self, prefix, args, rest)
         if not ok then
-          Logger.debug(Logger.level.warn .. ' *** ' .. err)
+          Logger.debug(Logger.level.error .. ' *** ' .. err)
         end
       end
     end,
