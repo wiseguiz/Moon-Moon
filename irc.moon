@@ -99,7 +99,7 @@ class IRCConnection
 		for _, handler in pairs @handlers[command]
 			ok, err = pcall handler, @, prefix, args, rest
 			if not ok
-				Logger.debug Logger.level.error .. ' *** ' .. err
+				Logger.print Logger.level.error .. ' *** ' .. err
 	
 	loop: ()=>
 		local line
