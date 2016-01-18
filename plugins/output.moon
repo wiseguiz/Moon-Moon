@@ -34,7 +34,7 @@ handlers:
 		nick = args[2]
 		kicker = prefix\match('^(.-)!') or prefix
 		if trailing
-			Logger.print patterns.KICK_2\format channel, kciker, nick, trailing
+			Logger.print patterns.KICK_2\format channel, kicker, nick, trailing
 		else
 			Logger.print patterns.KICK\format channel, kicker, nick
 	['PART']: (prefix, args, trailing)=>
