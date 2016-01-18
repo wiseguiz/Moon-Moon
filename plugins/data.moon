@@ -89,6 +89,6 @@ handlers:
 		-- User or bot parted network, nuke from lists
 		channel = args[1]
 		nick = prefix\match '^(.-)!'
-		for channel in @users[nick].channels do
+		for channel in pairs @users[nick].channels
 			@channels[channel].users[nick] = nil
 		@users[nick] = nil

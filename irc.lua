@@ -108,7 +108,7 @@ do
       for _, handler in pairs(self.handlers[command]) do
         local ok, err = pcall(handler, self, prefix, args, rest)
         if not ok then
-          Logger.debug(Logger.level.error .. ' *** ' .. err)
+          Logger.print(Logger.level.error .. ' *** ' .. err)
         end
       end
     end,
