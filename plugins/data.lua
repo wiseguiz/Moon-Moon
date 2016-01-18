@@ -1,3 +1,4 @@
+local Logger = require('logger')
 local serve_self
 serve_self = function(self)
   return setmetatable(self, {
@@ -60,8 +61,8 @@ return {
       end
     end,
     ['MODE'] = function(self, prefix, args)
-      if prefix[1] == "#" then
-        return self:send_raw(('NAMES'):format(args[1]))
+      if args[1]:sub(1, 1) == "#" then
+        return self:send_raw(('NAMES %s'):format(args[1]))
       end
     end,
     ['353'] = function(self, prefix, args, trail)
@@ -75,6 +76,11 @@ return {
         else
           status, nick = '', text
         end
+        if not self.users[nick] then
+          self.users[nick] = {
+            channels = { }
+          }
+        end
         if self.channels[channel].users[nick] then
           if self.users[nick].channels[channel] then
             self.users[nick].channels[channel].status = status
@@ -84,14 +90,19 @@ return {
             }
           end
         else
-          self.channels[channel].users[nick] = {
-            channels = {
-              [channel] = {
-                status = status
-              }
-            }
+          self.channels[channel].users[nick] = self.users[nick]
+          self.users[nick].channels[channel] = {
+            status = status
           }
         end
+      end
+    end,
+    ['KICK'] = function(self, prefix, args)
+      local channel = args[1]
+      local nick = args[2]
+      self.users[nick].channesl[channel] = nil
+      if #self.users[nick].channels == 0 then
+        self.users[nick] = nil
       end
     end,
     ['PART'] = function(self, prefix, args)

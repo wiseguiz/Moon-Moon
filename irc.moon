@@ -68,7 +68,7 @@ class IRCConnection
 		trailing = nil
 		tstart = message\find " :"
 		if tstart
-			trailing = message\sub tstart + 1
+			trailing = message\sub tstart + 2
 		else
 			tstart = #message
 
@@ -86,20 +86,20 @@ class IRCConnection
 
 	process: (line)=>
 		prefix, command, args, rest = @parse line
+		Logger.debug Logger.level.warn .. '--- | Line: ' .. line
 		if not @handlers[command]
 			return
-		Logger.debug Logger.level.okay .. ' --- | Running trigger: ' .. Logger.level.warn .. command
-		Logger.debug Logger.level.okay .. ' --- |\\ Line: ' .. line
+		Logger.debug Logger.level.okay .. '--- |\\ Running trigger: ' .. Logger.level.warn .. command
 		if prefix
-			Logger.debug Logger.level.okay .. ' --- |\\ Prefix: ' .. prefix
+			Logger.debug Logger.level.okay .. '--- |\\ Prefix: ' .. prefix
 		if #args > 0
-			Logger.debug Logger.level.okay .. ' --- |\\ Arguments: ' .. table.concat(args, ', ')
+			Logger.debug Logger.level.okay .. '--- |\\ Arguments: ' .. table.concat(args, ', ')
 		if rest
-			Logger.debug Logger.level.okay .. ' ---  \\ Trailing: ' .. rest
+			Logger.debug Logger.level.okay .. '---  \\ Trailing: ' .. rest
 		for _, handler in pairs @handlers[command]
 			ok, err = pcall handler, @, prefix, args, rest
 			if not ok
-				Logger.debug Logger.level.warn .. ' *** ' .. err
+				Logger.debug Logger.level.error .. ' *** ' .. err
 	
 	loop: ()=>
 		local line
