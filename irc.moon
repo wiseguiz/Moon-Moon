@@ -71,6 +71,12 @@ class IRCConnection
 	send: (name, pattern, ...)=>
 		@senders[name] pattern\format ...
 
+	date_pattern: "(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+).(%d+)Z"
+
+	parse_time: (datestring)=>
+		year, month, day, hour, min, sec, mil = datestring\match @date_pattern
+		return os.time(:year, :month, :day, :hour, :min, :sec) + tonumber(mil) / 1000
+
 	parse_tags: (tag_message)=>
 		local cur_name
 		tags = {}

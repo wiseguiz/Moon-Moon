@@ -146,13 +146,15 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 				@channels[channel].users[nick] = nil
 			@users[nick] = nil
 		['CAP']: (prefix, args, trailing)=>
-			caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify', 'chghost'}
+			caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
+				'chghost', 'server-time'}
+			to_send = {} if args[2] == 'LS'
 			for cap in *caps
 				if args[2] == 'LS'
 					for item in trailing\gmatch '%S+'
 						if item == cap
-							@send_raw 'CAP REQ ' .. item
-							@fire_hook 'REG_CAP'
+							to_send[#to_send + 1] = cap
+							@fire_hook 'REQ_CAP'
 				elseif args[2] == 'ACK' or args[2] == 'NAK'
 					local has_cap
 					for item in trailing\gmatch '%S+'
@@ -160,4 +162,6 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 							has_cap = true
 					@server.ircv3_caps[cap] = true if has_cap and args[2] == 'ACK'
 					@fire_hook 'ACK_CAP' if has_cap
+			if args[2] == 'LS'
+				@send_raw ('CAP REQ :%s')\format table.concat(to_send, ' ')
 }

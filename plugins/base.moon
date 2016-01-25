@@ -12,7 +12,7 @@ set_caps = 0
 			@send_raw 'CAP LS 302'
 			if not @fire_hook 'CAP_LS'
 				@send_raw 'CAP END'
-		['REG_CAP']: =>
+		['REQ_CAP']: =>
 			set_caps += 1
 		['ACK_CAP']: =>
 			set_caps -= 1

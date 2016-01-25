@@ -111,7 +111,7 @@ return {
           for item in trailing:gmatch('%S+') do
             if item == cap then
               self:send_raw('CAP REQ ' .. item)
-              self:fire_hook('REG_CAP')
+              self:fire_hook('REQ_CAP')
             end
           end
         elseif args[2] == 'ACK' or args[2] == 'NAK' then
