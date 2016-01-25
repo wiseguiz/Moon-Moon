@@ -77,11 +77,11 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 			-- Result of NAMES
 			channel = args[3]
 			statuses = @server.caps.PREFIX and @server.caps.PREFIX\match '%(.-%)(.+)' or "+@"
-			statuses = "^[" .. statuses\gsub("%[%]%(%)%.%+%-%*%?%^%$%%", "%%%1") .. "]"
+			statuses = "[" .. statuses\gsub("%p", "%%%1") .. "]"
 			for text in trail\gmatch '%S+'
 				local status, nick
 				if text\match statuses
-					status, nick = text\match '^(.)(.+)'
+					status, nick = text\match ('^(%s+)(.+)')\format statuses
 				else
 					status, nick = '', text
 				if not @users[nick]
@@ -115,16 +115,18 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 				@channels[channel].users[nick] = nil
 			@users[nick] = nil
 		['CAP']: (prefix, args, trailing)=>
-			if args[2] == 'LS'
-				for item in trailing\gmatch '%S+'
-					if item == 'extended-join'
-						@send_raw 'CAP REQ ' .. item
-						@fire_hook 'REG_CAP'
-			elseif args[2] == 'ACK' or args[2] == 'NAK'
-				local has_extjoin
-				for item in trailing\gmatch '%S+'
-					if item == 'extended-join'
-						has_extjoin = true
-				@server.ircv3_caps['extended-join'] = true if has_extjoin and args[2] == 'ACK'
-				@fire_hook 'ACK_CAP' if has_extjoin
+			caps = {'extended-join', 'multi-prefix'}
+			for cap in *caps
+				if args[2] == 'LS'
+					for item in trailing\gmatch '%S+'
+						if item == cap
+							@send_raw 'CAP REQ ' .. item
+							@fire_hook 'REG_CAP'
+				elseif args[2] == 'ACK' or args[2] == 'NAK'
+					local has_cap
+					for item in trailing\gmatch '%S+'
+						if item == cap
+							has_cap = true
+					@server.ircv3_caps[cap] = true if has_cap and args[2] == 'ACK'
+					@fire_hook 'ACK_CAP' if has_cap
 }
