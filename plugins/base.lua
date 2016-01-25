@@ -14,7 +14,7 @@ return {
   },
   hooks = {
     ['CONNECT'] = function(self)
-      self:send_raw('CAP LS')
+      self:send_raw('CAP LS 302')
       if not self:fire_hook('CAP_LS') then
         return self:send_raw('CAP END')
       end
@@ -25,7 +25,7 @@ return {
     ['ACK_CAP'] = function(self)
       set_caps = set_caps - 1
       if set_caps == 0 then
-        return self:send_raw('CAP_END')
+        return self:send_raw('CAP END')
       end
     end
   }
