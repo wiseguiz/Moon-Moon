@@ -4,6 +4,15 @@ local IRCConnection
 do
   local _class_0
   local _base_0 = {
+    add_hook = function(self, id, hook)
+      if not self.hooks[id] then
+        self.hooks[id] = {
+          hook
+        }
+      else
+        return table.insert(self.hooks[id], hook)
+      end
+    end,
     add_handler = function(self, id, handler)
       if not self.handlers[id] then
         self.handlers[id] = {
@@ -28,6 +37,11 @@ do
           self:add_handler(id, handler)
         end
       end
+      if modules.hooks then
+        for id, hook in pairs(modules.hooks) do
+          self:add_hook(id, hook)
+        end
+      end
     end,
     connect = function(self)
       if self.socket then
@@ -47,6 +61,7 @@ do
         Logger.debug('Started TLS exchange')
       end
       Logger.print(Logger.level.okay .. '--- Connected')
+      self:fire_hook('CONNECT')
       local nick = self.config.nick or 'Moonmoon'
       local user = self.config.username or 'moon'
       local real = self.config.realname or 'Moon Moon: MoonScript IRC Bot'
@@ -144,6 +159,19 @@ do
       table.remove(rest, 1)
       return prefix, command, rest, trailing, tags
     end,
+    fire_hook = function(self, hook_name)
+      if not self.hooks[hook_name] then
+        return false
+      end
+      for _, hook in pairs(self.hooks[hook_name]) do
+        Logger.print(Logger.level.warn .. '--- Running hook: ' .. hook_name)
+        local ok, err = pcall(hook, self)
+        if not ok then
+          Logger.print(Logger.level.error .. '*** ' .. err)
+        end
+      end
+      return true
+    end,
     process = function(self, line)
       local prefix, command, args, rest, tags = self:parse(line)
       Logger.debug(Logger.level.warn .. '--- | Line: ' .. line)
@@ -163,7 +191,7 @@ do
       for _, handler in pairs(self.handlers[command]) do
         local ok, err = pcall(handler, self, prefix, args, rest, tags)
         if not ok then
-          Logger.print(Logger.level.error .. ' *** ' .. err)
+          Logger.print(Logger.level.error .. '*** ' .. err)
         end
       end
     end,
@@ -200,6 +228,7 @@ do
       self.handlers = { }
       self.senders = { }
       self.server = { }
+      self.hooks = { }
     end,
     __base = _base_0,
     __name = "IRCConnection"
