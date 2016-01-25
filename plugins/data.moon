@@ -25,6 +25,9 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 		['AWAY']: (prefix, args, trail)=>
 			nick = prefix\match '^(.-)!'
 			@users[nick].away = trail
+		['ACCOUNT']: (prefix, args, trail)=>
+			nick = prefix\match '^(.-)!'
+			@users[nick].account = args[1] != "*" and args[1] or nil
 		['JOIN']: (prefix, args, trail)=>
 			-- user JOINs a channel
 			local channel
@@ -118,7 +121,7 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 				@channels[channel].users[nick] = nil
 			@users[nick] = nil
 		['CAP']: (prefix, args, trailing)=>
-			caps = {'extended-join', 'multi-prefix', 'away-notify'}
+			caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify'}
 			for cap in *caps
 				if args[2] == 'LS'
 					for item in trailing\gmatch '%S+'
