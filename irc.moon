@@ -11,6 +11,13 @@ class IRCConnection
 		@handlers = {}
 		@senders  = {}
 		@server   = {}
+		@hooks    = {}
+
+	add_hook: (id, hook)=>
+		if not @hooks[id]
+			@hooks[id] = {hook}
+		else
+			table.insert @hooks[id], hook
 	
 	add_handler: (id, handler)=>
 		if not @handlers[id]
@@ -29,6 +36,9 @@ class IRCConnection
 		if modules.handlers
 			for id, handler in pairs modules.handlers
 				@add_handler id, handler
+		if modules.hooks
+			for id, hook in pairs modules.hooks
+				@add_hook id, hook
 
 	connect: ()=>
 		if @socket
@@ -43,6 +53,7 @@ class IRCConnection
 			@socket\starttls!
 			Logger.debug 'Started TLS exchange'
 		Logger.print Logger.level.okay .. '--- Connected'
+		@fire_hook 'CONNECT'
 		nick = @config.nick or 'Moonmoon'
 		user = @config.username or 'moon'
 		real = @config.realname or 'Moon Moon: MoonScript IRC Bot'
@@ -125,6 +136,16 @@ class IRCConnection
 		table.remove(rest, 1)
 		return prefix, command, rest, trailing, tags
 
+	fire_hook: (hook_name)=>
+		if not @hooks[hook_name]
+			return false
+		for _, hook in pairs @hooks[hook_name]
+			Logger.print Logger.level.warn .. '--- Running hook: ' .. hook_name
+			ok, err = pcall hook, @
+			if not ok
+				Logger.print Logger.level.error .. '*** ' .. err
+		return true -- because it did fire off hooks
+
 	process: (line)=>
 		prefix, command, args, rest, tags = @parse line
 		Logger.debug Logger.level.warn .. '--- | Line: ' .. line
@@ -140,7 +161,7 @@ class IRCConnection
 		for _, handler in pairs @handlers[command]
 			ok, err = pcall handler, @, prefix, args, rest, tags
 			if not ok
-				Logger.print Logger.level.error .. ' *** ' .. err
+				Logger.print Logger.level.error .. '*** ' .. err
 	
 	loop: ()=>
 		local line

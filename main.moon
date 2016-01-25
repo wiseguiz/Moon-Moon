@@ -20,9 +20,9 @@ for file in lfs.dir 'configs'
 			data[key] = value
 		bot  = IRCConnection data.host, data.port, data
 
-		bot\connect!
 		for _, mod in pairs(mods)
 			bot\load_modules mod
+		bot\connect!
 
 		table.insert(bots, bot)
 

@@ -20,10 +20,10 @@ for file in lfs.dir('configs') do
       data[key] = value
     end
     local bot = IRCConnection(data.host, data.port, data)
-    bot:connect()
     for _, mod in pairs(mods) do
       bot:load_modules(mod)
     end
+    bot:connect()
     table.insert(bots, bot)
   end
 end
