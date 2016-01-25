@@ -8,15 +8,17 @@ serve_self = function(self)
   })
 end
 return {
-  handlers = {
-    ['001'] = function(self)
+  hooks = {
+    ['CONNECT'] = function(self)
       self.channels = serve_self({ })
       self.users = serve_self({ })
       self.server = {
         caps = { },
         ircv3_caps = { }
       }
-    end,
+    end
+  },
+  handlers = {
     ['005'] = function(self, prefix, args)
       local caps = {
         select(2, unpack(args))
@@ -31,12 +33,22 @@ return {
       end
     end,
     ['JOIN'] = function(self, prefix, args, trail)
-      local channel = trail or args[1]
+      local channel
+      local account
+      if self.server.ircv3_caps['extended-join'] then
+        if args[2] ~= '*' then
+          account = args[2]
+        end
+        channel = args[1]
+      else
+        channel = args[1] or trail
+      end
       local nick, username, host = prefix:match('^(.-)!(.-)@(.-)$')
       if prefix:match('^.-!.-@.-$') then
         nick, username, host = prefix:match('^(.-)!(.-)@(.-)$')
         if not self.users[nick] then
           self.users[nick] = {
+            account = account,
             channels = {
               [channel] = {
                 status = ""
@@ -46,11 +58,20 @@ return {
             host = host
           }
         else
-          self.users[nick].channels = {
-            [channel] = {
+          if not self.users[nick].channels then
+            self.users[nick].channels = {
+              [channel] = {
+                status = ""
+              }
+            }
+          else
+            self.users[nick].channels[channel] = {
               status = ""
             }
-          }
+          end
+        end
+        if account then
+          self.users[nick].account = account
         end
       end
       if not self.channels[channel] then
@@ -131,6 +152,29 @@ return {
         self.channels[channel].users[nick] = nil
       end
       self.users[nick] = nil
+    end,
+    ['CAP'] = function(self, prefix, args, trailing)
+      if args[2] == 'LS' then
+        for item in trailing:gmatch('%S+') do
+          if item == 'extended-join' then
+            self:send_raw('CAP REQ ' .. item)
+            self:fire_hook('REG_CAP')
+          end
+        end
+      elseif args[2] == 'ACK' or args[2] == 'NAK' then
+        local has_extjoin
+        for item in trailing:gmatch('%S+') do
+          if item == 'extended-join' then
+            has_extjoin = true
+          end
+        end
+        if has_extjoin and args[2] == 'ACK' then
+          self.server.ircv3_caps['extended-join'] = true
+        end
+        if has_extjoin then
+          return self:fire_hook('ACK_CAP')
+        end
+      end
     end
   }
 }
