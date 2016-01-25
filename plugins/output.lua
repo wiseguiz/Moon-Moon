@@ -108,7 +108,18 @@ return {
           return self:fire_hook('ACK_CAP')
         end
       elseif args[2] == 'ACK' or args[2] == 'NAK' then
-        return self:fire_hook('ACK_CAP')
+        local has_echo
+        for item in trailing:gmatch('%S+') do
+          if item == 'echo-message' then
+            has_echo = true
+          end
+        end
+        if has_echo and args[2] == 'ACK' then
+          self.server.ircv3_caps['echo-message'] = true
+        end
+        if has_echo then
+          return self:fire_hook('ACK_CAP')
+        end
       end
     end
   },

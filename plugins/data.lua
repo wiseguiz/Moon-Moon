@@ -13,7 +13,8 @@ return {
       self.channels = serve_self({ })
       self.users = serve_self({ })
       self.server = {
-        caps = { }
+        caps = { },
+        ircv3_caps = { }
       }
     end,
     ['005'] = function(self, prefix, args)
