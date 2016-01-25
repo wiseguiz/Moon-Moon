@@ -36,6 +36,10 @@ return {
       local nick = prefix:match('^(.-)!')
       self.users[nick].away = trail
     end,
+    ['ACCOUNT'] = function(self, prefix, args, trail)
+      local nick = prefix:match('^(.-)!')
+      self.users[nick].account = args[1] ~= "*" and args[1] or nil
+    end,
     ['JOIN'] = function(self, prefix, args, trail)
       local channel
       local account
@@ -161,7 +165,8 @@ return {
       local caps = {
         'extended-join',
         'multi-prefix',
-        'away-notify'
+        'away-notify',
+        'account-notify'
       }
       for _index_0 = 1, #caps do
         local cap = caps[_index_0]
