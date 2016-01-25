@@ -86,11 +86,14 @@ return {
         end
       end
       if not self.channels[channel] then
+        self:send_raw(('WHO %s'):format(channel))
         self.channels[channel] = {
           users = {
             [nick] = self.users[nick]
           }
         }
+      else
+        self.channels[channel].users[nick] = self.users[nick]
       end
     end,
     ['NICK'] = function(self, prefix, args, trail)
@@ -140,6 +143,23 @@ return {
         end
       end
     end,
+    ['352'] = function(self, prefix, args)
+      local _, user, host, nick, away
+      _, user, host, _, nick, away = unpack(args)
+      if not self.users[nick] then
+        self.users[nick] = {
+          channels = { }
+        }
+      end
+      self.users[nick].user = user
+      self.users[nick].host = host
+      self.users[nick].away = away:sub(1, 1) == "G"
+    end,
+    ['CHGHOST'] = function(self, prefix, args)
+      local nick = prefix:match('^(.-)!')
+      self.users[nick].user = args[1]
+      self.users[nick].host = args[2]
+    end,
     ['KICK'] = function(self, prefix, args)
       local channel = args[1]
       local nick = args[2]
@@ -169,7 +189,8 @@ return {
         'extended-join',
         'multi-prefix',
         'away-notify',
-        'account-notify'
+        'account-notify',
+        'chghost'
       }
       for _index_0 = 1, #caps do
         local cap = caps[_index_0]

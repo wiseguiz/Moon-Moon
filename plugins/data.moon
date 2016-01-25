@@ -65,11 +65,14 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 						@users[nick].channels[channel] = status: ""
 				@users[nick].account = account if account
 			if not @channels[channel]
+				@send_raw ('WHO %s')\format channel
 				@channels[channel] = {
 					users: {
 						[nick]: @users[nick]
 					}
 				}
+			else
+				@channels[channel].users[nick] = @users[nick]
 		['NICK']: (prefix, args, trail)=>
 			old = prefix\match('^(.-)!') or prefix
 			new = args[1] or trail
@@ -103,6 +106,15 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 				else
 					@channels[channel].users[nick] = @users[nick]
 					@users[nick].channels[channel] = :status
+		['352']: (prefix, args)=>
+			channel, user, host, server, nick, away = unpack args
+			@users[nick].user = user
+			@users[nick].host = host
+			@users[nick].away = away\sub(1, 1) == "G"
+		['CHGHOST']: (prefix, args)=>
+			nick = prefix\match '^(.-)!'
+			@users[nick].user = args[1]
+			@users[nick].host = args[2]
 		['KICK']: (prefix, args)=>
 			channel = args[1]
 			nick = args[2]
@@ -124,7 +136,7 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 				@channels[channel].users[nick] = nil
 			@users[nick] = nil
 		['CAP']: (prefix, args, trailing)=>
-			caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify'}
+			caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify', 'chghost'}
 			for cap in *caps
 				if args[2] == 'LS'
 					for item in trailing\gmatch '%S+'
