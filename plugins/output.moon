@@ -23,6 +23,10 @@ handlers:
 	['JOIN']: (prefix, args, trail)=>
 		-- user JOINs a channel
 		Logger.print patterns.JOIN\format args[1], prefix\match('^(.-)!') or prefix
+	['NICK']: (prefix, args, trail)=>
+		old = prefix\match('^(.-)!') or prefix
+		new = args[1] or trail
+		Logger.print ('%s \00309>>\003 %s')\format old, new
 	['MODE']: (prefix, args, trailing)=>
 		-- User or bot called /mode
 		channel = args[1]
