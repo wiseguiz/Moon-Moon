@@ -9,7 +9,7 @@ set_caps = 0
 			bot\send_raw ("PONG %s")\format last
 	hooks:
 		['CONNECT']: =>
-			@send_raw 'CAP LS'
+			@send_raw 'CAP LS 302'
 			if not @fire_hook 'CAP_LS'
 				@send_raw 'CAP END'
 		['REG_CAP']: =>
@@ -17,5 +17,5 @@ set_caps = 0
 		['ACK_CAP']: =>
 			set_caps -= 1
 			if set_caps == 0
-				@send_raw 'CAP_END'
+				@send_raw 'CAP END'
 }

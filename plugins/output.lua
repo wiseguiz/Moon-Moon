@@ -94,6 +94,27 @@ return {
       else
         return Logger.print(patterns.NOTICE_2:format(nick, trailing))
       end
+    end,
+    ['CAP'] = function(self, prefix, args, trailing)
+      if args[2] == 'LS' then
+        local has_echo
+        for item in trailing:gmatch('%S+') do
+          if item == 'echo-message' then
+            has_echo = true
+            self:send_raw('CAP REQ ' .. item)
+          end
+        end
+        if not has_echo then
+          return self:fire_hook('ACK_CAP')
+        end
+      elseif args[2] == 'ACK' or args[2] == 'NAK' then
+        return self:fire_hook('ACK_CAP')
+      end
+    end
+  },
+  hooks = {
+    ['CAP_LS'] = function(self)
+      return self:fire_hook('REG_CAP')
     end
   }
 }
