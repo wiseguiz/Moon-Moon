@@ -87,7 +87,12 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 				if not has_echo
 					@fire_hook 'ACK_CAP'
 			elseif args[2] == 'ACK' or args[2] == 'NAK'
-				@fire_hook 'ACK_CAP'
+				local has_echo
+				for item in trailing\gmatch '%S+'
+					if item == 'echo-message'
+						has_echo = true
+				@server.ircv3_caps['echo-message'] = true if has_echo and args[2] == 'ACK'
+				@fire_hook 'ACK_CAP' if has_echo
 	hooks:
 		['CAP_LS']: =>
 			@fire_hook 'REG_CAP'

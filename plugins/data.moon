@@ -8,7 +8,8 @@ handlers:
 		@channels = serve_self {}
 		@users    = serve_self {}
 		@server   =            {
-			caps: {}
+			caps: {},
+			ircv3_caps: {}
 		}
 	['005']: (prefix, args)=>
 		-- Capabilities
