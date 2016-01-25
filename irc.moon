@@ -1,6 +1,8 @@
 socket = require 'cqueues.socket'
 Logger = require 'logger'
 
+escapers =  {['s']: ' ', ['r']: '\r', ['n']: '\n', [';']: ';'}
+
 class IRCConnection
 	new: (server, port=6667, config={})=>
 		assert(server)
@@ -70,38 +72,36 @@ class IRCConnection
 		@senders[name] pattern\format ...
 
 	parse_tags: (tag_message)=>
+		local cur_name
 		tags = {}
-		is_on_name = true
-		cur_name = ""
-		escaping = false
-		escapers =  {['s']: ' ', ['r']: '\r', ['n']: '\n', [';']: ';'}
-		charbuf = ""
-		for pos=1, #tag_message
-			char = tag_message\sub pos, pos
-			if char == '\\' then
-				if escaping
-					charbuf = charbuf .. '\\'
-				escaping = not escaping
-			elseif escaping
-				charbuf = charbuf .. (escapers[char] or "")
-				escaping = false
-			elseif char == "=" and is_on_name
-				is_on_name = false
-				cur_name = charbuf
-				charbuf = ""
-			elseif char == ";" then
-				if not is_on_name
-					is_on_name = true
-					tags[cur_name] = charbuf
-					cur_name = ""
-					charbuf = ""
+		charbuf = {}
+		pos = 1
+		while pos < #tag_message do
+			if tag_message\match '^\\', pos
+				lookahead = tag_message\sub pos+1, pos+1
+				charbuf[#charbuf + 1] = escapers[lookahead] or lookahead
+				pos += 2
+			elseif cur_name
+				if tag_message\match "^;", pos
+					tags[cur_name] = table.concat charbuf
+					cur_name = nil
+					charbuf = {}
+					pos += 1
 				else
-					tags[charbuf] = true
-					charbuf = ""
+					charbuf[#charbuf + 1], pos = tag_message\match "([^\\;]+)()", pos
 			else
-				charbuf = charbuf .. char
-		tags[cur_name] = charbuf if cur_name != ""
-		tags[charbuf] = true if cur_name == ""
+				if tag_message\match "^=", pos
+					if #charbuf > 0
+						cur_name = table.concat charbuf
+						charbuf = {}
+					pos += 1
+				elseif tag_message\match "^;", pos
+					if #charbuf > 0
+						tags[table.concat charbuf] = true
+						charbuf = {}
+					pos += 1
+				else
+					charbuf[#charbuf + 1], pos = tag_message\match "([^\\=;]+)()", pos
 		return tags
 
 	parse: (message_with_tags)=>
