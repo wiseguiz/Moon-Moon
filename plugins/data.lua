@@ -60,6 +60,16 @@ return {
         }
       end
     end,
+    ['NICK'] = function(self, prefix, args, trail)
+      local old = prefix:match('^(.-)!') or prefix
+      local new = args[1] or trail
+      for channel_name in pairs(self.users[old].channels) do
+        self.channels[channel_name].users[new] = self.channels[channel_name].users[old]
+        self.channels[channel_name].users[old] = nil
+      end
+      self.users[new] = self.users[old]
+      self.users[old] = nil
+    end,
     ['MODE'] = function(self, prefix, args)
       if args[1]:sub(1, 1) == "#" then
         return self:send_raw(('NAMES %s'):format(args[1]))

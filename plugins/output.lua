@@ -28,6 +28,11 @@ return {
     ['JOIN'] = function(self, prefix, args, trail)
       return Logger.print(patterns.JOIN:format(args[1], prefix:match('^(.-)!') or prefix))
     end,
+    ['NICK'] = function(self, prefix, args, trail)
+      local old = prefix:match('^(.-)!') or prefix
+      local new = args[1] or trail
+      return Logger.print(('%s \00309>>\003 %s'):format(old, new))
+    end,
     ['MODE'] = function(self, prefix, args, trailing)
       local channel = args[1]
       table.remove(args, 1)

@@ -47,6 +47,14 @@ handlers:
 					[nick]: @users[nick]
 				}
 			}
+	['NICK']: (prefix, args, trail)=>
+		old = prefix\match('^(.-)!') or prefix
+		new = args[1] or trail
+		for channel_name in pairs @users[old].channels
+			@channels[channel_name].users[new] = @channels[channel_name].users[old]
+			@channels[channel_name].users[old] = nil
+		@users[new] = @users[old]
+		@users[old] = nil
 	['MODE']: (prefix, args)=>
 		-- User or bot called /mode
 		if args[1]\sub(1,1) == "#"
