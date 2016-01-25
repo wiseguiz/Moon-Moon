@@ -100,7 +100,7 @@ return {
     ['KICK'] = function(self, prefix, args)
       local channel = args[1]
       local nick = args[2]
-      self.users[nick].channesl[channel] = nil
+      self.users[nick].channels[channel] = nil
       if #self.users[nick].channels == 0 then
         self.users[nick] = nil
       end

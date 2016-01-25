@@ -75,7 +75,7 @@ handlers:
 	['KICK']: (prefix, args)=>
 		channel = args[1]
 		nick = args[2]
-		@users[nick].channesl[channel] = nil
+		@users[nick].channels[channel] = nil
 		if #@users[nick].channels == 0
 			@users[nick] = nil
 	['PART']: (prefix, args)=>

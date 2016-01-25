@@ -64,15 +64,70 @@ do
     send = function(self, name, pattern, ...)
       return self.senders[name](pattern:format(...))
     end,
-    parse = function(self, message)
+    parse_tags = function(self, tag_message)
+      local tags = { }
+      local is_on_name = true
+      local cur_name = ""
+      local escaping = false
+      local escapers = {
+        ['s'] = ' ',
+        ['r'] = '\r',
+        ['n'] = '\n',
+        [';'] = ';'
+      }
+      local charbuf = ""
+      for pos = 1, #tag_message do
+        local char = tag_message:sub(pos, pos)
+        if char == '\\' then
+          if escaping then
+            charbuf = charbuf .. '\\'
+          end
+          escaping = not escaping
+        elseif escaping then
+          charbuf = charbuf .. (escapers[char] or "")
+          escaping = false
+        elseif char == "=" and is_on_name then
+          is_on_name = false
+          cur_name = charbuf
+          charbuf = ""
+        elseif char == ";" then
+          if not is_on_name then
+            is_on_name = true
+            tags[cur_name] = charbuf
+            cur_name = ""
+            charbuf = ""
+          else
+            tags[charbuf] = true
+            charbuf = ""
+          end
+        else
+          charbuf = charbuf .. char
+        end
+      end
+      if cur_name ~= "" then
+        tags[cur_name] = charbuf
+      end
+      if cur_name == "" then
+        tags[charbuf] = true
+      end
+      return tags
+    end,
+    parse = function(self, message_with_tags)
+      local message, tags
+      if message_with_tags:sub(1, 1) == '@' then
+        tags = self:parse_tags(message_with_tags:sub(2, message_with_tags:find(' ') - 1))
+        message = message_with_tags:sub((message_with_tags:find(' ') + 1))
+      else
+        message = message_with_tags
+      end
       local prefix_end = 0
       local prefix = nil
-      if message:sub(1, 1) == ":" then
-        prefix_end = message:find(" ")
-        prefix = message:sub(2, message:find(" ") - 1)
+      if message:sub(1, 1) == ':' then
+        prefix_end = message:find(' ')
+        prefix = message:sub(2, message:find(' ') - 1)
       end
       local trailing = nil
-      local tstart = message:find(" :")
+      local tstart = message:find(' :')
       if tstart then
         trailing = message:sub(tstart + 2)
       else
@@ -80,17 +135,17 @@ do
       end
       local rest = (function(segment)
         local t = { }
-        for word in segment:gmatch("%S+") do
+        for word in segment:gmatch('%S+') do
           table.insert(t, word)
         end
         return t
       end)(message:sub(prefix_end + 1, tstart))
       local command = rest[1]
       table.remove(rest, 1)
-      return prefix, command, rest, trailing
+      return prefix, command, rest, trailing, tags
     end,
     process = function(self, line)
-      local prefix, command, args, rest = self:parse(line)
+      local prefix, command, args, rest, tags = self:parse(line)
       Logger.debug(Logger.level.warn .. '--- | Line: ' .. line)
       if not self.handlers[command] then
         return 
@@ -103,10 +158,10 @@ do
         Logger.debug(Logger.level.okay .. '--- |\\ Arguments: ' .. table.concat(args, ', '))
       end
       if rest then
-        Logger.debug(Logger.level.okay .. '---  \\ Trailing: ' .. rest)
+        Logger.debug(Logger.level.okay .. '--- |\\ Trailing: ' .. rest)
       end
       for _, handler in pairs(self.handlers[command]) do
-        local ok, err = pcall(handler, self, prefix, args, rest)
+        local ok, err = pcall(handler, self, prefix, args, rest, tags)
         if not ok then
           Logger.print(Logger.level.error .. ' *** ' .. err)
         end

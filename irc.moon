@@ -58,15 +58,56 @@ class IRCConnection
 	send: (name, pattern, ...)=>
 		@senders[name] pattern\format ...
 
-	parse: (message)=>
+	parse_tags: (tag_message)=>
+		tags = {}
+		is_on_name = true
+		cur_name = ""
+		escaping = false
+		escapers =  {['s']: ' ', ['r']: '\r', ['n']: '\n', [';']: ';'}
+		charbuf = ""
+		for pos=1, #tag_message
+			char = tag_message\sub pos, pos
+			if char == '\\' then
+				if escaping
+					charbuf = charbuf .. '\\'
+				escaping = not escaping
+			elseif escaping
+				charbuf = charbuf .. (escapers[char] or "")
+				escaping = false
+			elseif char == "=" and is_on_name
+				is_on_name = false
+				cur_name = charbuf
+				charbuf = ""
+			elseif char == ";" then
+				if not is_on_name
+					is_on_name = true
+					tags[cur_name] = charbuf
+					cur_name = ""
+					charbuf = ""
+				else
+					tags[charbuf] = true
+					charbuf = ""
+			else
+				charbuf = charbuf .. char
+		tags[cur_name] = charbuf if cur_name != ""
+		tags[charbuf] = true if cur_name == ""
+		return tags
+
+	parse: (message_with_tags)=>
+		local message, tags
+		if message_with_tags\sub(1, 1) == '@'
+			tags = @parse_tags message_with_tags\sub 2, message_with_tags\find(' ') - 1
+			message = message_with_tags\sub((message_with_tags\find(' ') + 1))
+		else
+			message = message_with_tags
 		prefix_end = 0
 		prefix = nil
-		if message\sub(1, 1) == ":"
-			prefix_end = message\find " "
-			prefix = message\sub 2, message\find(" ") - 1
+		if message\sub(1, 1) == ':'
+			prefix_end = message\find ' '
+			prefix = message\sub 2, message\find(' ') - 1
 
 		trailing = nil
-		tstart = message\find " :"
+		tstart = message\find ' :'
 		if tstart
 			trailing = message\sub tstart + 2
 		else
@@ -74,7 +115,7 @@ class IRCConnection
 
 		rest = ((segment)->
 			t = {}
-			for word in segment\gmatch "%S+"
+			for word in segment\gmatch '%S+'
 				table.insert t, word
 
 			return t
@@ -82,10 +123,10 @@ class IRCConnection
 
 		command = rest[1]
 		table.remove(rest, 1)
-		return prefix, command, rest, trailing
+		return prefix, command, rest, trailing, tags
 
 	process: (line)=>
-		prefix, command, args, rest = @parse line
+		prefix, command, args, rest, tags = @parse line
 		Logger.debug Logger.level.warn .. '--- | Line: ' .. line
 		if not @handlers[command]
 			return
@@ -95,9 +136,9 @@ class IRCConnection
 		if #args > 0
 			Logger.debug Logger.level.okay .. '--- |\\ Arguments: ' .. table.concat(args, ', ')
 		if rest
-			Logger.debug Logger.level.okay .. '---  \\ Trailing: ' .. rest
+			Logger.debug Logger.level.okay .. '--- |\\ Trailing: ' .. rest
 		for _, handler in pairs @handlers[command]
-			ok, err = pcall handler, @, prefix, args, rest
+			ok, err = pcall handler, @, prefix, args, rest, tags
 			if not ok
 				Logger.print Logger.level.error .. ' *** ' .. err
 	
