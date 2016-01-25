@@ -40,13 +40,16 @@ return {
       local nick = prefix:match('^(.-)!')
       self.users[nick].account = args[1] ~= "*" and args[1] or nil
     end,
-    ['JOIN'] = function(self, prefix, args, trail)
+    ['JOIN'] = function(self, prefix, args, trail, tags)
       local channel
       local account
       if self.server.ircv3_caps['extended-join'] then
         if args[2] ~= '*' then
           account = args[2]
         end
+        channel = args[1]
+      elseif self.server.ircv3_caps['account-tag'] and tags and tags.account then
+        account = tags.account
         channel = args[1]
       else
         channel = args[1] or trail
