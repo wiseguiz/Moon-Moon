@@ -100,11 +100,11 @@ return {
     ['353'] = function(self, prefix, args, trail)
       local channel = args[3]
       local statuses = self.server.caps.PREFIX and self.server.caps.PREFIX:match('%(.-%)(.+)' or "+@")
-      statuses = "^[" .. statuses:gsub("%[%]%(%)%.%+%-%*%?%^%$%%", "%%%1") .. "]"
+      statuses = "[" .. statuses:gsub("%p", "%%%1") .. "]"
       for text in trail:gmatch('%S+') do
         local status, nick
         if text:match(statuses) then
-          status, nick = text:match('^(.)(.+)')
+          status, nick = text:match(('^(%s+)(.+)'):format(statuses))
         else
           status, nick = '', text
         end
@@ -154,25 +154,32 @@ return {
       self.users[nick] = nil
     end,
     ['CAP'] = function(self, prefix, args, trailing)
-      if args[2] == 'LS' then
-        for item in trailing:gmatch('%S+') do
-          if item == 'extended-join' then
-            self:send_raw('CAP REQ ' .. item)
-            self:fire_hook('REG_CAP')
+      local caps = {
+        'extended-join',
+        'multi-prefix'
+      }
+      for _index_0 = 1, #caps do
+        local cap = caps[_index_0]
+        if args[2] == 'LS' then
+          for item in trailing:gmatch('%S+') do
+            if item == cap then
+              self:send_raw('CAP REQ ' .. item)
+              self:fire_hook('REG_CAP')
+            end
           end
-        end
-      elseif args[2] == 'ACK' or args[2] == 'NAK' then
-        local has_extjoin
-        for item in trailing:gmatch('%S+') do
-          if item == 'extended-join' then
-            has_extjoin = true
+        elseif args[2] == 'ACK' or args[2] == 'NAK' then
+          local has_cap
+          for item in trailing:gmatch('%S+') do
+            if item == cap then
+              has_cap = true
+            end
           end
-        end
-        if has_extjoin and args[2] == 'ACK' then
-          self.server.ircv3_caps['extended-join'] = true
-        end
-        if has_extjoin then
-          return self:fire_hook('ACK_CAP')
+          if has_cap and args[2] == 'ACK' then
+            self.server.ircv3_caps[cap] = true
+          end
+          if has_cap then
+            self:fire_hook('ACK_CAP')
+          end
         end
       end
     end
