@@ -86,7 +86,11 @@ return {
         end
       end
       if not self.channels[channel] then
-        self:send_raw(('WHO %s'):format(channel))
+        if self.server.ircv3_caps['userhost-in-names'] then
+          self:send_raw(('NAMES %s'):format(channel))
+        else
+          self:send_raw(('WHO %s'):format(channel))
+        end
         self.channels[channel] = {
           users = {
             [nick] = self.users[nick]
@@ -116,16 +120,27 @@ return {
       local statuses = self.server.caps.PREFIX and self.server.caps.PREFIX:match('%(.-%)(.+)' or "+@")
       statuses = "[" .. statuses:gsub("%p", "%%%1") .. "]"
       for text in trail:gmatch('%S+') do
-        local status, nick
+        local status, pre, nick, user, host
         if text:match(statuses) then
-          status, nick = text:match(('^(%s+)(.+)'):format(statuses))
+          status, pre = text:match(('^(%s+)(.+)'):format(statuses))
         else
-          status, nick = '', text
+          status, pre = '', text
+        end
+        if self.server.ircv3_caps['userhost-in-names'] then
+          nick, user, host = pre:match('^(.-)!(.-)@(.-)$')
+        else
+          nick = pre
         end
         if not self.users[nick] then
           self.users[nick] = {
             channels = { }
           }
+        end
+        if user then
+          self.users[nick].user = user
+        end
+        if host then
+          self.users[nick].host = host
         end
         if self.channels[channel].users[nick] then
           if self.users[nick].channels[channel] then

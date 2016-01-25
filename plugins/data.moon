@@ -65,7 +65,10 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 						@users[nick].channels[channel] = status: ""
 				@users[nick].account = account if account
 			if not @channels[channel]
-				@send_raw ('WHO %s')\format channel
+				if @server.ircv3_caps['userhost-in-names']
+					@send_raw ('NAMES %s')\format channel
+				else
+					@send_raw ('WHO %s')\format channel
 				@channels[channel] = {
 					users: {
 						[nick]: @users[nick]
@@ -91,13 +94,19 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 			statuses = @server.caps.PREFIX and @server.caps.PREFIX\match '%(.-%)(.+)' or "+@"
 			statuses = "[" .. statuses\gsub("%p", "%%%1") .. "]"
 			for text in trail\gmatch '%S+'
-				local status, nick
+				local status, pre, nick, user, host
 				if text\match statuses
-					status, nick = text\match ('^(%s+)(.+)')\format statuses
+					status, pre = text\match ('^(%s+)(.+)')\format statuses
 				else
-					status, nick = '', text
+					status, pre = '', text
+				if @server.ircv3_caps['userhost-in-names']
+					nick, user, host = pre\match '^(.-)!(.-)@(.-)$'
+				else
+					nick = pre
 				if not @users[nick]
 					@users[nick] = {channels: {}}
+				@users[nick].user = user if user
+				@users[nick].host = host if host
 				if @channels[channel].users[nick]
 					if @users[nick].channels[channel]
 						@users[nick].channels[channel].status = status
@@ -107,7 +116,8 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 					@channels[channel].users[nick] = @users[nick]
 					@users[nick].channels[channel] = :status
 		['352']: (prefix, args)=>
-			channel, user, host, server, nick, away = unpack args
+			_, user, host, _, nick, away = unpack args
+			@users[nick] = {channels: {}} if not @users[nick]
 			@users[nick].user = user
 			@users[nick].host = host
 			@users[nick].away = away\sub(1, 1) == "G"
