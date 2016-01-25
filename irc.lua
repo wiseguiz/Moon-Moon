@@ -85,6 +85,18 @@ do
     send = function(self, name, pattern, ...)
       return self.senders[name](pattern:format(...))
     end,
+    date_pattern = "(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+).(%d+)Z",
+    parse_time = function(self, datestring)
+      local year, month, day, hour, min, sec, mil = datestring:match(self.date_pattern)
+      return os.time({
+        year = year,
+        month = month,
+        day = day,
+        hour = hour,
+        min = min,
+        sec = sec
+      }) + tonumber(mil) / 1000
+    end,
     parse_tags = function(self, tag_message)
       local cur_name
       local tags = { }

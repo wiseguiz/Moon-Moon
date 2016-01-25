@@ -205,15 +205,20 @@ return {
         'multi-prefix',
         'away-notify',
         'account-notify',
-        'chghost'
+        'chghost',
+        'server-time'
       }
+      local to_send
+      if args[2] == 'LS' then
+        to_send = { }
+      end
       for _index_0 = 1, #caps do
         local cap = caps[_index_0]
         if args[2] == 'LS' then
           for item in trailing:gmatch('%S+') do
             if item == cap then
-              self:send_raw('CAP REQ ' .. item)
-              self:fire_hook('REG_CAP')
+              to_send[#to_send + 1] = cap
+              self:fire_hook('REQ_CAP')
             end
           end
         elseif args[2] == 'ACK' or args[2] == 'NAK' then
@@ -230,6 +235,9 @@ return {
             self:fire_hook('ACK_CAP')
           end
         end
+      end
+      if args[2] == 'LS' then
+        return self:send_raw(('CAP REQ :%s'):format(table.concat(to_send, ' ')))
       end
     end
   }

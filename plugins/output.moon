@@ -88,7 +88,7 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 					for item in trailing\gmatch '%S+'
 						if item == cap
 							@send_raw 'CAP REQ ' .. item
-							@fire_hook 'REG_CAP'
+							@fire_hook 'REQ_CAP'
 				elseif args[2] == 'ACK' or args[2] == 'NAK'
 					local has_cap
 					for item in trailing\gmatch '%S+'

@@ -19,7 +19,7 @@ return {
         return self:send_raw('CAP END')
       end
     end,
-    ['REG_CAP'] = function(self)
+    ['REQ_CAP'] = function(self)
       set_caps = set_caps + 1
     end,
     ['ACK_CAP'] = function(self)
