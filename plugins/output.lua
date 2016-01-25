@@ -13,7 +13,8 @@ local patterns = {
   PRIVMSG = "\00311<\00308[\003%s\00308]\003%s\00311>\003 %s",
   PRIVMSG_2 = "\00311<\003%s\00311>\003 %s",
   NOTICE = "\00311-\00308[\003%s\00308]\003%s\00311-\003 %s",
-  NOTICE_2 = "\00311-\003%s\00311-\003 %s"
+  NOTICE_2 = "\00311-\003%s\00311-\003 %s",
+  INVITE = "\00308[\003%s\00308]\003 %s invited %s"
 }
 local serve_self
 serve_self = function(self)
@@ -95,37 +96,39 @@ return {
         return Logger.print(patterns.NOTICE_2:format(nick, trailing))
       end
     end,
+    ['INVITE'] = function(self, prefix, args, trailing)
+      local nick = prefix:match('^(.-)!') or prefix
+      return Logger.print(patterns.INVITE:format(args[2], nick, args[1]))
+    end,
     ['CAP'] = function(self, prefix, args, trailing)
-      if args[2] == 'LS' then
-        local has_echo
-        for item in trailing:gmatch('%S+') do
-          if item == 'echo-message' then
-            has_echo = true
-            self:send_raw('CAP REQ ' .. item)
+      local caps = {
+        'echo-message',
+        'invite-notify'
+      }
+      for _index_0 = 1, #caps do
+        local cap = caps[_index_0]
+        if args[2] == 'LS' then
+          for item in trailing:gmatch('%S+') do
+            if item == cap then
+              self:send_raw('CAP REQ ' .. item)
+              self:fire_hook('REG_CAP')
+            end
           end
-        end
-        if not has_echo then
-          return self:fire_hook('ACK_CAP')
-        end
-      elseif args[2] == 'ACK' or args[2] == 'NAK' then
-        local has_echo
-        for item in trailing:gmatch('%S+') do
-          if item == 'echo-message' then
-            has_echo = true
+        elseif args[2] == 'ACK' or args[2] == 'NAK' then
+          local has_cap
+          for item in trailing:gmatch('%S+') do
+            if item == cap then
+              has_cap = true
+            end
           end
-        end
-        if has_echo and args[2] == 'ACK' then
-          self.server.ircv3_caps['echo-message'] = true
-        end
-        if has_echo then
-          return self:fire_hook('ACK_CAP')
+          if has_cap and args[2] == 'ACK' then
+            self.server.ircv3_caps[cap] = true
+          end
+          if has_cap then
+            self:fire_hook('ACK_CAP')
+          end
         end
       end
-    end
-  },
-  hooks = {
-    ['CAP_LS'] = function(self)
-      return self:fire_hook('REG_CAP')
     end
   }
 }

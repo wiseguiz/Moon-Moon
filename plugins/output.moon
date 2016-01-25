@@ -15,6 +15,7 @@ patterns = {
 	PRIVMSG_2: "\00311<\003%s\00311>\003 %s"
 	NOTICE: "\00311-\00308[\003%s\00308]\003%s\00311-\003 %s"
 	NOTICE_2: "\00311-\003%s\00311-\003 %s"
+	INVITE: "\00308[\003%s\00308]\003 %s invited %s"
 }
 
 serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
@@ -77,23 +78,22 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 				Logger.print patterns.NOTICE\format args[1], nick, trailing
 			else
 				Logger.print patterns.NOTICE_2\format nick, trailing
+		['INVITE']: (prefix, args, trailing)=>
+			nick = prefix\match('^(.-)!') or prefix
+			Logger.print patterns.INVITE\format args[2], nick, args[1]
 		['CAP']: (prefix, args, trailing)=>
-			if args[2] == 'LS'
-				local has_echo
-				for item in trailing\gmatch '%S+'
-					if item == 'echo-message'
-						has_echo = true
-						@send_raw 'CAP REQ ' .. item
-				if not has_echo
-					@fire_hook 'ACK_CAP'
-			elseif args[2] == 'ACK' or args[2] == 'NAK'
-				local has_echo
-				for item in trailing\gmatch '%S+'
-					if item == 'echo-message'
-						has_echo = true
-				@server.ircv3_caps['echo-message'] = true if has_echo and args[2] == 'ACK'
-				@fire_hook 'ACK_CAP' if has_echo
-	hooks:
-		['CAP_LS']: =>
-			@fire_hook 'REG_CAP'
+			caps = {'echo-message', 'invite-notify'}
+			for cap in *caps
+				if args[2] == 'LS'
+					for item in trailing\gmatch '%S+'
+						if item == cap
+							@send_raw 'CAP REQ ' .. item
+							@fire_hook 'REG_CAP'
+				elseif args[2] == 'ACK' or args[2] == 'NAK'
+					local has_cap
+					for item in trailing\gmatch '%S+'
+						if item == cap
+							has_cap = true
+					@server.ircv3_caps[cap] = true if has_cap and args[2] == 'ACK'
+					@fire_hook 'ACK_CAP' if has_cap
 }
