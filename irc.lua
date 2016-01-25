@@ -1,5 +1,11 @@
 local socket = require('cqueues.socket')
 local Logger = require('logger')
+local escapers = {
+  ['s'] = ' ',
+  ['r'] = '\r',
+  ['n'] = '\n',
+  [';'] = ';'
+}
 local IRCConnection
 do
   local _class_0
@@ -80,50 +86,41 @@ do
       return self.senders[name](pattern:format(...))
     end,
     parse_tags = function(self, tag_message)
+      local cur_name
       local tags = { }
-      local is_on_name = true
-      local cur_name = ""
-      local escaping = false
-      local escapers = {
-        ['s'] = ' ',
-        ['r'] = '\r',
-        ['n'] = '\n',
-        [';'] = ';'
-      }
-      local charbuf = ""
-      for pos = 1, #tag_message do
-        local char = tag_message:sub(pos, pos)
-        if char == '\\' then
-          if escaping then
-            charbuf = charbuf .. '\\'
-          end
-          escaping = not escaping
-        elseif escaping then
-          charbuf = charbuf .. (escapers[char] or "")
-          escaping = false
-        elseif char == "=" and is_on_name then
-          is_on_name = false
-          cur_name = charbuf
-          charbuf = ""
-        elseif char == ";" then
-          if not is_on_name then
-            is_on_name = true
-            tags[cur_name] = charbuf
-            cur_name = ""
-            charbuf = ""
+      local charbuf = { }
+      local pos = 1
+      while pos < #tag_message do
+        if tag_message:match('^\\', pos) then
+          local lookahead = tag_message:sub(pos + 1, pos + 1)
+          charbuf[#charbuf + 1] = escapers[lookahead] or lookahead
+          pos = pos + 2
+        elseif cur_name then
+          if tag_message:match("^;", pos) then
+            tags[cur_name] = table.concat(charbuf)
+            cur_name = nil
+            charbuf = { }
+            pos = pos + 1
           else
-            tags[charbuf] = true
-            charbuf = ""
+            charbuf[#charbuf + 1], pos = tag_message:match("([^\\;]+)()", pos)
           end
         else
-          charbuf = charbuf .. char
+          if tag_message:match("^=", pos) then
+            if #charbuf > 0 then
+              cur_name = table.concat(charbuf)
+              charbuf = { }
+            end
+            pos = pos + 1
+          elseif tag_message:match("^;", pos) then
+            if #charbuf > 0 then
+              tags[table.concat(charbuf)] = true
+              charbuf = { }
+            end
+            pos = pos + 1
+          else
+            charbuf[#charbuf + 1], pos = tag_message:match("([^\\=;]+)()", pos)
+          end
         end
-      end
-      if cur_name ~= "" then
-        tags[cur_name] = charbuf
-      end
-      if cur_name == "" then
-        tags[charbuf] = true
       end
       return tags
     end,
