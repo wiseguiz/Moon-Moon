@@ -27,7 +27,8 @@ end
 return {
   handlers = {
     ['JOIN'] = function(self, prefix, args, trail)
-      return Logger.print(patterns.JOIN:format(args[1], prefix:match('^(.-)!') or prefix))
+      local channel = args[1] or trail
+      return Logger.print(patterns.JOIN:format(channel, prefix:match('^(.-)!') or prefix))
     end,
     ['NICK'] = function(self, prefix, args, trail)
       local old = prefix:match('^(.-)!') or prefix

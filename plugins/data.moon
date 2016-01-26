@@ -9,8 +9,8 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 			@channels = serve_self {}
 			@users    = serve_self {}
 			@server   =            {
-				caps: {},
-				ircv3_caps: {}
+				caps: serve_self {},
+				ircv3_caps: serve_self {}
 			}
 	handlers:
 		['005']: (prefix, args)=>
@@ -147,20 +147,21 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 		['CAP']: (prefix, args, trailing)=>
 			caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 				'chghost', 'server-time'}
-			to_send = {} if args[2] == 'LS'
-			for cap in *caps
-				if args[2] == 'LS'
-					for item in trailing\gmatch '%S+'
+			to_process = {} if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NAK'
+			if args[2] == 'LS' or args[2] == 'ACK'
+				for item in trailing\gmatch '%S+'
+					for cap in *caps
 						if item == cap
-							to_send[#to_send + 1] = cap
-							@fire_hook 'REQ_CAP'
-				elseif args[2] == 'ACK' or args[2] == 'NAK'
-					local has_cap
-					for item in trailing\gmatch '%S+'
-						if item == cap
-							has_cap = true
-					@server.ircv3_caps[cap] = true if has_cap and args[2] == 'ACK'
-					@fire_hook 'ACK_CAP' if has_cap
+							@fire_hook 'REQ_CAP' if args[2] == 'LS'
+							to_process[#to_process + 1] = cap
 			if args[2] == 'LS'
-				@send_raw ('CAP REQ :%s')\format table.concat(to_send, ' ')
+				@send_raw ('CAP REQ :%s')\format table.concat(to_process, ' ')
+			elseif args[2] == 'ACK'
+				for cap in *to_process
+					key, value = cap\match '^(.-)=(.+)'
+					if value
+						@server.ircv3_caps[key] = value
+					else
+						@server.ircv3_caps[cap] = true
+					@fire_hook 'ACK_CAP'
 }

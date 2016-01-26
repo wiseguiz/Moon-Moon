@@ -146,7 +146,7 @@ class IRCConnection
 		if not @hooks[hook_name]
 			return false
 		for _, hook in pairs @hooks[hook_name]
-			Logger.print Logger.level.warn .. '--- Running hook: ' .. hook_name
+			Logger.debug Logger.level.warn .. '--- Running hook: ' .. hook_name
 			ok, err = pcall hook, @
 			if not ok
 				Logger.print Logger.level.error .. '*** ' .. err

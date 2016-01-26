@@ -173,7 +173,7 @@ do
         return false
       end
       for _, hook in pairs(self.hooks[hook_name]) do
-        Logger.print(Logger.level.warn .. '--- Running hook: ' .. hook_name)
+        Logger.debug(Logger.level.warn .. '--- Running hook: ' .. hook_name)
         local ok, err = pcall(hook, self)
         if not ok then
           Logger.print(Logger.level.error .. '*** ' .. err)
