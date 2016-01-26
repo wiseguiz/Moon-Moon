@@ -214,7 +214,7 @@ return {
       if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NAK' then
         to_process = { }
       end
-      if args[2] == 'LS' or args[2] == 'ACK' then
+      if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NEW' or args[2] == 'DEL' then
         for item in trailing:gmatch('%S+') do
           for _index_0 = 1, #caps do
             local cap = caps[_index_0]
@@ -229,6 +229,29 @@ return {
       end
       if args[2] == 'LS' then
         return self:send_raw(('CAP REQ :%s'):format(table.concat(to_process, ' ')))
+      elseif args[2] == 'NEW' then
+        local to_send = { }
+        for item in trailing:gmatch('%S+') do
+          for _index_0 = 1, #caps do
+            local cap = caps[_index_0]
+            if item == cap then
+              self:fire_hook('REQ_CAP')
+              to_send[#to_send + 1] = item
+            end
+          end
+        end
+        return self:send_raw(('CAP REQ :%s'):format(table.concat(to_send, ' ')))
+      elseif args[2] == 'DEL' then
+        local to_send = { }
+        for item in trailing:gmatch('%S+') do
+          for _index_0 = 1, #caps do
+            local cap = caps[_index_0]
+            if item == cap then
+              self:fire_hook('DEL_CAP')
+              to_send[#to_send + 1] = item
+            end
+          end
+        end
       elseif args[2] == 'ACK' then
         for _index_0 = 1, #to_process do
           local cap = to_process[_index_0]
