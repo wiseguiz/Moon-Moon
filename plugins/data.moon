@@ -148,7 +148,7 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 			caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 				'chghost', 'server-time'}
 			to_process = {} if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NAK'
-			if args[2] == 'LS' or args[2] == 'ACK'
+			if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NEW' or args[2] == 'DEL'
 				for item in trailing\gmatch '%S+'
 					for cap in *caps
 						if item == cap
@@ -156,6 +156,21 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 							to_process[#to_process + 1] = cap
 			if args[2] == 'LS'
 				@send_raw ('CAP REQ :%s')\format table.concat(to_process, ' ')
+			elseif args[2] == 'NEW'
+				to_send = {}
+				for item in trailing\gmatch '%S+'
+					for cap in *caps
+						if item == cap
+							@fire_hook 'REQ_CAP'
+							to_send[#to_send + 1] = item
+				@send_raw ('CAP REQ :%s')\format table.concat(to_send, ' ')
+			elseif args[2] == 'DEL'
+				to_send = {}
+				for item in trailing\gmatch '%S+'
+					for cap in *caps
+						if item == cap
+							@fire_hook 'DEL_CAP'
+							to_send[#to_send + 1] = item
 			elseif args[2] == 'ACK'
 				for cap in *to_process
 					key, value = cap\match '^(.-)=(.+)'
