@@ -56,7 +56,6 @@ return {
       end
       local nick, username, host = prefix:match('^(.-)!(.-)@(.-)$')
       if prefix:match('^.-!.-@.-$') then
-        nick, username, host = prefix:match('^(.-)!(.-)@(.-)$')
         if not self.users[nick] then
           self.users[nick] = {
             account = account,
