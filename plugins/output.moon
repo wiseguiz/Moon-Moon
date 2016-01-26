@@ -24,7 +24,8 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 	handlers:
 		['JOIN']: (prefix, args, trail)=>
 			-- user JOINs a channel
-			Logger.print patterns.JOIN\format args[1], prefix\match('^(.-)!') or prefix
+			channel = args[1] or trail
+			Logger.print patterns.JOIN\format channel, prefix\match('^(.-)!') or prefix
 		['NICK']: (prefix, args, trail)=>
 			old = prefix\match('^(.-)!') or prefix
 			new = args[1] or trail

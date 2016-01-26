@@ -13,8 +13,8 @@ return {
       self.channels = serve_self({ })
       self.users = serve_self({ })
       self.server = {
-        caps = { },
-        ircv3_caps = { }
+        caps = serve_self({ }),
+        ircv3_caps = serve_self({ })
       }
     end
   },
@@ -210,36 +210,36 @@ return {
         'chghost',
         'server-time'
       }
-      local to_send
-      if args[2] == 'LS' then
-        to_send = { }
+      local to_process
+      if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NAK' then
+        to_process = { }
       end
-      for _index_0 = 1, #caps do
-        local cap = caps[_index_0]
-        if args[2] == 'LS' then
-          for item in trailing:gmatch('%S+') do
+      if args[2] == 'LS' or args[2] == 'ACK' then
+        for item in trailing:gmatch('%S+') do
+          for _index_0 = 1, #caps do
+            local cap = caps[_index_0]
             if item == cap then
-              to_send[#to_send + 1] = cap
-              self:fire_hook('REQ_CAP')
+              if args[2] == 'LS' then
+                self:fire_hook('REQ_CAP')
+              end
+              to_process[#to_process + 1] = cap
             end
-          end
-        elseif args[2] == 'ACK' or args[2] == 'NAK' then
-          local has_cap
-          for item in trailing:gmatch('%S+') do
-            if item == cap then
-              has_cap = true
-            end
-          end
-          if has_cap and args[2] == 'ACK' then
-            self.server.ircv3_caps[cap] = true
-          end
-          if has_cap then
-            self:fire_hook('ACK_CAP')
           end
         end
       end
       if args[2] == 'LS' then
-        return self:send_raw(('CAP REQ :%s'):format(table.concat(to_send, ' ')))
+        return self:send_raw(('CAP REQ :%s'):format(table.concat(to_process, ' ')))
+      elseif args[2] == 'ACK' then
+        for _index_0 = 1, #to_process do
+          local cap = to_process[_index_0]
+          local key, value = cap:match('^(.-)=(.+)')
+          if value then
+            self.server.ircv3_caps[key] = value
+          else
+            self.server.ircv3_caps[cap] = true
+          end
+          self:fire_hook('ACK_CAP')
+        end
       end
     end
   }
