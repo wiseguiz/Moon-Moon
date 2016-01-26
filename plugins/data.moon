@@ -28,14 +28,14 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 		['ACCOUNT']: (prefix, args, trail)=>
 			nick = prefix\match '^(.-)!'
 			@users[nick].account = args[1] != "*" and args[1] or nil
-		['JOIN']: (prefix, args, trail, tags)=>
+		['JOIN']: (prefix, args, trail, tags={})=>
 			-- user JOINs a channel
 			local channel
 			local account
 			if @server.ircv3_caps['extended-join']
 				account = args[2] if args[2] != '*'
 				channel = args[1]
-			elseif @server.ircv3_caps['account-tag'] and tags and tags.account
+			elseif @server.ircv3_caps['account-tag'] and tags.account
 				account = tags.account
 				channel = args[1]
 			else

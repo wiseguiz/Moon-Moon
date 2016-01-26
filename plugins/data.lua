@@ -41,6 +41,9 @@ return {
       self.users[nick].account = args[1] ~= "*" and args[1] or nil
     end,
     ['JOIN'] = function(self, prefix, args, trail, tags)
+      if tags == nil then
+        tags = { }
+      end
       local channel
       local account
       if self.server.ircv3_caps['extended-join'] then
@@ -48,7 +51,7 @@ return {
           account = args[2]
         end
         channel = args[1]
-      elseif self.server.ircv3_caps['account-tag'] and tags and tags.account then
+      elseif self.server.ircv3_caps['account-tag'] and tags.account then
         account = tags.account
         channel = args[1]
       else
