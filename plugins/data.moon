@@ -42,7 +42,6 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 				channel = args[1] or trail
 			nick, username, host = prefix\match '^(.-)!(.-)@(.-)$'
 			if prefix\match '^.-!.-@.-$'
-				nick, username, host = prefix\match '^(.-)!(.-)@(.-)$'
 				if not @users[nick] then
 					@users[nick] = {
 						account: account
