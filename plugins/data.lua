@@ -7,6 +7,16 @@ serve_self = function(self)
     end
   })
 end
+local garb_batch
+garb_batch = function(self)
+  return setmetatable(self, {
+    __gc = function(self)
+      for k, v in pairs(self.gc) do
+        pcall(v)
+      end
+    end
+  })
+end
 return {
   hooks = {
     ['CONNECT'] = function(self)
@@ -15,7 +25,10 @@ return {
       self.server = {
         caps = serve_self({ }),
         ircv3_caps = serve_self({ }),
-        batches = serve_self({ })
+        batches = serve_self({
+          gc = { },
+          garbage = garb_batch
+        })
       }
     end
   },

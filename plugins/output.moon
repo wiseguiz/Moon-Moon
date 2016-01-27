@@ -1,5 +1,10 @@
 Logger = require 'logger'
 
+batches = {
+	netjoin:  {}
+	netsplit: {}
+}
+
 patterns = {
 	JOIN: "\00308[\003%s\00308]\003 \00309>\003 %s"
 	MODE: "\00308[\003%s\00308]\003 Mode %s by %s"
@@ -16,16 +21,38 @@ patterns = {
 	NOTICE: "\00311-\00308[\003%s\00308]\003%s\00311-\003 %s"
 	NOTICE_2: "\00311-\003%s\00311-\003 %s"
 	INVITE: "\00308[\003%s\00308]\003 %s invited %s"
+	NETJOIN: "\00308[\003%s\00308]\003 \00309>\003 (%s)"
+	NETQUIT: "\00304<\003 (%s)"
 }
 
 serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 
 {
+	hooks:
+		['NETJOIN']: =>
+			channels = {}
+			for user in *batches.netjoin
+				channel, prefix = next user
+				channels[channel] = {} if not channels[channel]
+				table.insert channels[channel], prefix\match('^(.-)!') or prefix
+			for channel_user_list in *channels
+				Logger.log patterns.NETJOIN\format channel, table.concat(channel_user_list, ', ')
+		['NETQUIT']: =>
+			Logger.log patterns.NETQUIT\format table.concat(batches.netquit, ', ')
 	handlers:
-		['JOIN']: (prefix, args, trail)=>
+		['JOIN']: (prefix, args, trail, tags={})=>
 			-- user JOINs a channel
 			channel = args[1] or trail
-			Logger.print patterns.JOIN\format channel, prefix\match('^(.-)!') or prefix
+			if not tags.batch then
+				Logger.print patterns.JOIN\format channel, prefix\match('^(.-)!') or prefix
+			else
+				for batch in *@server.batches
+					if batch == tags.batch
+						if #@server.batches[batch].gc > 0
+							table.insert @server.batches[batch].gc, ->
+								@fire_hook 'NETJOIN'
+								batches.netjoin = {}
+						batches.netjoin[#batches.netjoin + 1] = {[channel]: prefix}
 		['NICK']: (prefix, args, trail)=>
 			old = prefix\match('^(.-)!') or prefix
 			new = args[1] or trail
@@ -52,13 +79,23 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 				Logger.print patterns.PART_2\format channel, nick, trailing
 			else
 				Logger.print patterns.PART\format channel, nick
-		['QUIT']: (prefix, args, trailing)=>
+		['QUIT']: (prefix, args, trailing, tags = {})=>
 			-- User or bot parted network, nuke from lists
 			nick = prefix\match('^(.-)!') or prefix
-			if trailing
-				Logger.print patterns.QUIT_2\format nick, trailing
+			if tags.batch
+				for batch in *@server.batches
+					if batch == tags.batch
+						if #@server.batches[batch].gc > 0
+							table.insert @server.batches[batch].gc, ->
+								@fire_hook 'NETQUIT'
+								batches.netquit = {}
+						batches.netquit[#batches.netquit + 1] = {[channel]: prefix}
+				
 			else
-				Logger.print patterns.QUIT\format nick
+				if trailing
+					Logger.print patterns.QUIT_2\format nick, trailing
+				else
+					Logger.print patterns.QUIT\format nick
 		['PRIVMSG']: (prefix, args, trailing)=>
 			nick = prefix\match('^(.-)!') or prefix
 			if not args[1]\sub(1, 1) == '#'
