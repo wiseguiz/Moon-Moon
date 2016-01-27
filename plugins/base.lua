@@ -1,4 +1,5 @@
 local set_caps = 0
+local last_connect
 return {
   handlers = {
     ['001'] = function(self)
@@ -8,12 +9,21 @@ return {
         end
       end
     end,
-    PING = function(bot, sender, args, last)
-      return bot:send_raw(("PONG %s"):format(last))
+    ['PING'] = function(self, sender, args, last)
+      return self:send_raw(("PONG %s"):format(last))
+    end,
+    ['ERROR'] = function(self, message)
+      local time = os.time()
+      if time > last_connect + 30 then
+        return self:connect()
+      else
+        return cqueues.sleep(last_connect + 30 - time)
+      end
     end
   },
   hooks = {
     ['CONNECT'] = function(self)
+      last_connect = os.time()
       self:send_raw('CAP LS 302')
       if not self:fire_hook('CAP_LS') then
         return self:send_raw('CAP END')
