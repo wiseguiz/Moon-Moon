@@ -9,10 +9,17 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 			@channels = serve_self {}
 			@users    = serve_self {}
 			@server   =            {
-				caps: serve_self {},
+				caps:       serve_self {}
 				ircv3_caps: serve_self {}
+				batches:    serve_self {}
 			}
 	handlers:
+		['BATCH']: (prefix, args, trail, tags)=>
+			tag_type, tag = args[1]\match '(.)(.+)'
+			if tag_type == '+'
+				@server.batches[tag] = {unpack(args, 2)}
+			elseif tag_type == '-'
+				@server.batches[tag] = nil
 		['005']: (prefix, args)=>
 			-- Capabilities
 			caps = {select 2, unpack args}

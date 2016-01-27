@@ -1,3 +1,4 @@
+cqueues = require 'cqueues'
 set_caps = 0
 local last_connect
 {
