@@ -1,6 +1,10 @@
 Logger = require 'logger'
 
-serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
+serve_self ==> setmetatable(@, {__call: =>pairs(@)})
+garb_batch ==> setmetatable(@, {__gc: =>
+	for k, v in pairs @gc
+		pcall v
+})
 
 {
 	hooks:
@@ -11,7 +15,7 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 			@server   =            {
 				caps:       serve_self {}
 				ircv3_caps: serve_self {}
-				batches:    serve_self {}
+				batches:    serve_self {gc: {}, garbage: garb_batch}
 			}
 	handlers:
 		['BATCH']: (prefix, args, trail, tags)=>

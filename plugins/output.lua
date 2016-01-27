@@ -1,4 +1,8 @@
 local Logger = require('logger')
+local batches = {
+  netjoin = { },
+  netsplit = { }
+}
 local patterns = {
   JOIN = "\00308[\003%s\00308]\003 \00309>\003 %s",
   MODE = "\00308[\003%s\00308]\003 Mode %s by %s",
@@ -14,7 +18,9 @@ local patterns = {
   PRIVMSG_2 = "\00311<\003%s\00311>\003 %s",
   NOTICE = "\00311-\00308[\003%s\00308]\003%s\00311-\003 %s",
   NOTICE_2 = "\00311-\003%s\00311-\003 %s",
-  INVITE = "\00308[\003%s\00308]\003 %s invited %s"
+  INVITE = "\00308[\003%s\00308]\003 %s invited %s",
+  NETJOIN = "\00308[\003%s\00308]\003 \00309>\003 (%s)",
+  NETSPLIT = "\00304<\003 (%s)"
 }
 local serve_self
 serve_self = function(self)
@@ -25,10 +31,51 @@ serve_self = function(self)
   })
 end
 return {
+  hooks = {
+    ['NETJOIN'] = function(self)
+      local channels = { }
+      local _list_0 = batches.netjoin
+      for _index_0 = 1, #_list_0 do
+        local user = _list_0[_index_0]
+        local channel, prefix = next(user)
+        if not channels[channel] then
+          channels[channel] = { }
+        end
+        table.insert(channels[channel], prefix:match('^(.-)!') or prefix)
+      end
+      for channel, channel_user_list in pairs(channels) do
+        Logger.log(patterns.NETJOIN:format(channel, table.concat(channel_user_list, ', ')))
+      end
+    end,
+    ['NETSPLIT'] = function(self)
+      return Logger.log(patterns.NETSPLIT:format(table.concat(batches.netsplit, ', ')))
+    end
+  },
   handlers = {
-    ['JOIN'] = function(self, prefix, args, trail)
+    ['JOIN'] = function(self, prefix, args, trail, tags)
+      if tags == nil then
+        tags = { }
+      end
       local channel = args[1] or trail
-      return Logger.print(patterns.JOIN:format(channel, prefix:match('^(.-)!') or prefix))
+      if not tags.batch then
+        return Logger.print(patterns.JOIN:format(channel, prefix:match('^(.-)!') or prefix))
+      else
+        local _list_0 = self.server.batches
+        for _index_0 = 1, #_list_0 do
+          local name, batch = _list_0[_index_0]
+          if name == tags.batch and batch[1] == 'netjoin' then
+            if #self.server.batches[name].gc > 0 then
+              table.insert(self.server.batches[batch].gc, function()
+                self:fire_hook('NETJOIN')
+                batches.netjoin = { }
+              end)
+            end
+            batches.netjoin[#batches.netjoin + 1] = {
+              [channel] = prefix
+            }
+          end
+        end
+      end
     end,
     ['NICK'] = function(self, prefix, args, trail)
       local old = prefix:match('^(.-)!') or prefix
@@ -61,12 +108,29 @@ return {
         return Logger.print(patterns.PART:format(channel, nick))
       end
     end,
-    ['QUIT'] = function(self, prefix, args, trailing)
+    ['QUIT'] = function(self, prefix, args, trailing, tags)
+      if tags == nil then
+        tags = { }
+      end
       local nick = prefix:match('^(.-)!') or prefix
-      if trailing then
-        return Logger.print(patterns.QUIT_2:format(nick, trailing))
+      if tags.batch then
+        for name, batch in pairs(self.server.batches) do
+          if name == tags.batch and tags.batch[1] == 'netsplit' then
+            if #self.server.batches[name].gc > 0 then
+              table.insert(self.server.batches[batch].gc, function()
+                self:fire_hook('NETSPLIT')
+                batches.netsplit = { }
+              end)
+            end
+            batches.netsplit[#batches.netsplit + 1] = nick
+          end
+        end
       else
-        return Logger.print(patterns.QUIT:format(nick))
+        if trailing then
+          return Logger.print(patterns.QUIT_2:format(nick, trailing))
+        else
+          return Logger.print(patterns.QUIT:format(nick))
+        end
       end
     end,
     ['PRIVMSG'] = function(self, prefix, args, trailing)
