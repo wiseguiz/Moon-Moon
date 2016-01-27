@@ -14,11 +14,22 @@ return {
       self.users = serve_self({ })
       self.server = {
         caps = serve_self({ }),
-        ircv3_caps = serve_self({ })
+        ircv3_caps = serve_self({ }),
+        batches = serve_self({ })
       }
     end
   },
   handlers = {
+    ['BATCH'] = function(self, prefix, args, trail, tags)
+      local tag_type, tag = args[1]:match('(.)(.+)')
+      if tag_type == '+' then
+        self.server.batches[tag] = {
+          unpack(args, 2)
+        }
+      elseif tag_type == '-' then
+        self.server.batches[tag] = nil
+      end
+    end,
     ['005'] = function(self, prefix, args)
       local caps = {
         select(2, unpack(args))
