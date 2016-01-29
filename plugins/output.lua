@@ -163,7 +163,8 @@ return {
     end,
     ['INVITE'] = function(self, prefix, args, trailing)
       local nick = prefix:match('^(.-)!') or prefix
-      return Logger.print(patterns.INVITE:format(args[2], nick, args[1]))
+      local channel = args[2]
+      return Logger.print(patterns.INVITE:format(channel, nick, args[1]))
     end,
     ['CAP'] = function(self, prefix, args, trailing)
       local caps = {

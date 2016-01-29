@@ -22,7 +22,7 @@ patterns = {
 	NOTICE_2: "\00311-\003%s\00311-\003 %s"
 	INVITE: "\00308[\003%s\00308]\003 %s invited %s"
 	NETJOIN: "\00308[\003%s\00308]\003 \00309>\003 (%s)"
-	NETQUIT: "\00304<\003 (%s)"
+	NETSPLIT: "\00304<\003 (%s)"
 }
 
 serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
@@ -35,10 +35,10 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 				channel, prefix = next user
 				channels[channel] = {} if not channels[channel]
 				table.insert channels[channel], prefix\match('^(.-)!') or prefix
-			for channel_user_list in *channels
+			for channel, channel_user_list in pairs channels
 				Logger.log patterns.NETJOIN\format channel, table.concat(channel_user_list, ', ')
-		['NETQUIT']: =>
-			Logger.log patterns.NETQUIT\format table.concat(batches.netquit, ', ')
+		['NETSPLIT']: =>
+			Logger.log patterns.NETSPLIT\format table.concat(batches.netsplit, ', ')
 	handlers:
 		['JOIN']: (prefix, args, trail, tags={})=>
 			-- user JOINs a channel
@@ -46,9 +46,9 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 			if not tags.batch then
 				Logger.print patterns.JOIN\format channel, prefix\match('^(.-)!') or prefix
 			else
-				for batch in *@server.batches
-					if batch == tags.batch
-						if #@server.batches[batch].gc > 0
+				for name, batch in *@server.batches
+					if name == tags.batch and batch[1] == 'netjoin'
+						if #@server.batches[name].gc > 0
 							table.insert @server.batches[batch].gc, ->
 								@fire_hook 'NETJOIN'
 								batches.netjoin = {}
@@ -83,13 +83,13 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 			-- User or bot parted network, nuke from lists
 			nick = prefix\match('^(.-)!') or prefix
 			if tags.batch
-				for batch in *@server.batches
-					if batch == tags.batch
-						if #@server.batches[batch].gc > 0
+				for name, batch in pairs @server.batches
+					if name == tags.batch and tags.batch[1] == 'netsplit'
+						if #@server.batches[name].gc > 0
 							table.insert @server.batches[batch].gc, ->
-								@fire_hook 'NETQUIT'
-								batches.netquit = {}
-						batches.netquit[#batches.netquit + 1] = {[channel]: prefix}
+								@fire_hook 'NETSPLIT'
+								batches.netsplit = {}
+						batches.netsplit[#batches.netsplit + 1] = nick
 				
 			else
 				if trailing
@@ -118,7 +118,8 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 				Logger.print patterns.NOTICE_2\format nick, trailing
 		['INVITE']: (prefix, args, trailing)=>
 			nick = prefix\match('^(.-)!') or prefix
-			Logger.print patterns.INVITE\format args[2], nick, args[1]
+			channel = args[2]
+			Logger.print patterns.INVITE\format channel, nick, args[1]
 		['CAP']: (prefix, args, trailing)=>
 			caps = {'echo-message', 'invite-notify'}
 			for cap in *caps
