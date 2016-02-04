@@ -48,6 +48,11 @@ class IRCConnection
 		host = @config.server
 		port = @config.port
 		debug_msg = ('Connecting... {host: "%s", port: "%s"}')\format host, port
+		---
+		@config.nick = 'Moon-Moon' if not @config.nick
+		@config.username = 'Mooooon' if not @config.username
+		@config.realname = 'Moon Moon: MoonScript IRC Bot' if not @config.realname
+		---
 		Logger.debug debug_msg, Logger.level.warn .. '--- Connecting...'
 		@socket = assert socket.connect{:host, :port}
 		if @config.ssl
@@ -56,14 +61,18 @@ class IRCConnection
 			Logger.debug 'Started TLS exchange'
 		Logger.print Logger.level.okay .. '--- Connected'
 		@fire_hook 'CONNECT'
-		nick = @config.nick or 'Moonmoon'
-		user = @config.username or 'moon'
-		real = @config.realname or 'Moon Moon: MoonScript IRC Bot'
+		nick = @config.nick
+		user = @config.username
+		real = @config.realname
 		Logger.print Logger.level.warn .. '--- Sending authentication data'
 		@send_raw ('NICK %s')\format nick
 		@send_raw ('USER %s * * :%s')\format user, real
 		debug_msg = ('Sent authentication data: {nickname: %s, username: %s, realname: %s}')\format nick, user, real
 		Logger.debug debug_msg, Logger.level.okay .. '--- Sent authentication data'
+
+	disconnect: ()=>
+		@socket\shutdown! if @socket
+		@fire_hook 'DISCONNECT'
 
 	send_raw: (...)=>
 		@socket\write table.concat({...}, ' ') .. '\n'

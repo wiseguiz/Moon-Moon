@@ -11,14 +11,23 @@ local last_connect
 			@send_raw ("PONG %s")\format last
 		['ERROR']: (message)=>
 			time = os.time()
-			if time > last_connect + 30
+			if time > @data.last_connect + 30
 				@connect!
 			else
-				cqueues.sleep(last_connect + 30 - time)
+				cqueues.sleep(@data.last_connect + 30 - time)
+		['433']: =>
+			@data.nick_test = 0 if not @data.nick_test
+			@data.nick_test += 1
+			cqueues.sleep 0.5
+			if @data.nick_test >= 30
+				@disconnect!
+			else
+				@send_raw ('NICK %s[%d]')\format @config.nick, @data.nick_test
 
 	hooks:
 		['CONNECT']: =>
-			last_connect = os.time()
+			@data = {} if not @data
+			@data.last_connect = os.time()
 			@send_raw 'CAP LS 302'
 			if not @fire_hook 'CAP_LS'
 				@send_raw 'CAP END'

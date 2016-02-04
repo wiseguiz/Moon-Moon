@@ -56,6 +56,15 @@ do
       local host = self.config.server
       local port = self.config.port
       local debug_msg = ('Connecting... {host: "%s", port: "%s"}'):format(host, port)
+      if not self.config.nick then
+        self.config.nick = 'Moon-Moon'
+      end
+      if not self.config.username then
+        self.config.username = 'Mooooon'
+      end
+      if not self.config.realname then
+        self.config.realname = 'Moon Moon: MoonScript IRC Bot'
+      end
       Logger.debug(debug_msg, Logger.level.warn .. '--- Connecting...')
       self.socket = assert(socket.connect({
         host = host,
@@ -68,14 +77,20 @@ do
       end
       Logger.print(Logger.level.okay .. '--- Connected')
       self:fire_hook('CONNECT')
-      local nick = self.config.nick or 'Moonmoon'
-      local user = self.config.username or 'moon'
-      local real = self.config.realname or 'Moon Moon: MoonScript IRC Bot'
+      local nick = self.config.nick
+      local user = self.config.username
+      local real = self.config.realname
       Logger.print(Logger.level.warn .. '--- Sending authentication data')
       self:send_raw(('NICK %s'):format(nick))
       self:send_raw(('USER %s * * :%s'):format(user, real))
       debug_msg = ('Sent authentication data: {nickname: %s, username: %s, realname: %s}'):format(nick, user, real)
       return Logger.debug(debug_msg, Logger.level.okay .. '--- Sent authentication data')
+    end,
+    disconnect = function(self)
+      if self.socket then
+        self.socket:shutdown()
+      end
+      return self:fire_hook('DISCONNECT')
     end,
     send_raw = function(self, ...)
       return self.socket:write(table.concat({
