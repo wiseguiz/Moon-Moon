@@ -15,16 +15,31 @@ return {
     end,
     ['ERROR'] = function(self, message)
       local time = os.time()
-      if time > last_connect + 30 then
+      if time > self.data.last_connect + 30 then
         return self:connect()
       else
-        return cqueues.sleep(last_connect + 30 - time)
+        return cqueues.sleep(self.data.last_connect + 30 - time)
+      end
+    end,
+    ['433'] = function(self)
+      if not self.data.nick_test then
+        self.data.nick_test = 0
+      end
+      self.data.nick_test = self.data.nick_test + 1
+      cqueues.sleep(0.5)
+      if self.data.nick_test >= 30 then
+        return self:disconnect()
+      else
+        return self:send_raw(('NICK %s[%d]'):format(self.config.nick, self.data.nick_test))
       end
     end
   },
   hooks = {
     ['CONNECT'] = function(self)
-      last_connect = os.time()
+      if not self.data then
+        self.data = { }
+      end
+      self.data.last_connect = os.time()
       self:send_raw('CAP LS 302')
       if not self:fire_hook('CAP_LS') then
         return self:send_raw('CAP END')
