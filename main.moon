@@ -3,6 +3,8 @@ Logger = require 'logger'
 cqueues = require 'cqueues'
 lfs     = require 'lfs'
 
+Logger.set_debug true if os.getenv 'DEBUG'
+
 mods = {}
 for file in lfs.dir 'plugins'
 	if file\match "%.lua$"
@@ -34,10 +36,6 @@ success, fw = pcall require, 'astronomy'
 if not success then
 	queue = cqueues.new!
 	package.loaded['queue'] = queue
-	if os.getenv 'DEBUG'
-		Logger.print 'Loading debug module'
-		Logger.set_debug true
-		Logger.debug 'Loaded debug module'
 	main!
 	while not queue\empty!
 		assert queue\step!

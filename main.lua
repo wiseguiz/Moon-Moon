@@ -2,6 +2,9 @@ local IRCConnection = require('irc')
 local Logger = require('logger')
 local cqueues = require('cqueues')
 local lfs = require('lfs')
+if os.getenv('DEBUG') then
+  Logger.set_debug(true)
+end
 local mods = { }
 for file in lfs.dir('plugins') do
   if file:match("%.lua$") then
@@ -42,11 +45,6 @@ local success, fw = pcall(require, 'astronomy')
 if not success then
   local queue = cqueues.new()
   package.loaded['queue'] = queue
-  if os.getenv('DEBUG') then
-    Logger.print('Loading debug module')
-    Logger.set_debug(true)
-    Logger.debug('Loaded debug module')
-  end
   main()
   while not queue:empty() do
     assert(queue:step())
