@@ -80,8 +80,15 @@ do
       local nick = self.config.nick
       local user = self.config.username
       local real = self.config.realname
+      local pass = self.config.password
       Logger.print(Logger.level.warn .. '--- Sending authentication data')
       self:send_raw(('NICK %s'):format(nick))
+      if pass and self.config.ssl then
+        Logger.debug('*** Sending password')
+        self:send_raw(('PASS :%s'):format(pass))
+      elseif pass then
+        Logger.debug(Logger.level.error .. '*** Not sending password: TLS not enabled ***')
+      end
       self:send_raw(('USER %s * * :%s'):format(user, real))
       debug_msg = ('Sent authentication data: {nickname: %s, username: %s, realname: %s}'):format(nick, user, real)
       return Logger.debug(debug_msg, Logger.level.okay .. '--- Sent authentication data')
