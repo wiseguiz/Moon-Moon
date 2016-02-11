@@ -4,9 +4,10 @@ Logger = require 'logger'
 escapers =  {['s']: ' ', ['r']: '\r', ['n']: '\n', [';']: ';'}
 
 class IRCConnection
-	new: (server, port=6667, config={})=>
+	new: (server, port=6697, config={})=>
+		print port
 		assert(server)
-		@config = :server, :port, :config
+		@config = :server, :port, :config, ssl: port == 6697
 		for k, v in pairs(config)
 			@config[k] = v
 
@@ -47,6 +48,8 @@ class IRCConnection
 			@socket\shutdown!
 		host = @config.server
 		port = @config.port
+		ssl  = @config.ssl
+		print ssl
 		debug_msg = ('Connecting... {host: "%s", port: "%s"}')\format host, port
 		---
 		@config.nick = 'Moon-Moon' if not @config.nick

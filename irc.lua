@@ -55,6 +55,7 @@ do
       end
       local host = self.config.server
       local port = self.config.port
+      local ssl = self.config.ssl
       local debug_msg = ('Connecting... {host: "%s", port: "%s"}'):format(host, port)
       if not self.config.nick then
         self.config.nick = 'Moon-Moon'
@@ -70,7 +71,7 @@ do
         host = host,
         port = port
       }))
-      if self.config.ssl then
+      if ssl then
         Logger.debug('Starting TLS exchange...')
         self.socket:starttls()
         Logger.debug('Started TLS exchange')
@@ -83,7 +84,7 @@ do
       local pass = self.config.password
       Logger.print(Logger.level.warn .. '--- Sending authentication data')
       self:send_raw(('NICK %s'):format(nick))
-      if pass and self.config.ssl then
+      if pass and ssl then
         Logger.debug('*** Sending password')
         self:send_raw(('PASS :%s'):format(pass))
       elseif pass then
@@ -242,7 +243,7 @@ do
   _class_0 = setmetatable({
     __init = function(self, server, port, config)
       if port == nil then
-        port = 6667
+        port = 6697
       end
       if config == nil then
         config = { }
@@ -251,7 +252,8 @@ do
       self.config = {
         server = server,
         port = port,
-        config = config
+        config = config,
+        ssl = port == 6697
       }
       for k, v in pairs(config) do
         self.config[k] = v
