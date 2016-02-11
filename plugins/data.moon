@@ -6,6 +6,9 @@ garb_batch ==> setmetatable(@, {__gc: =>
 		pcall v
 })
 
+caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
+	'chghost', 'server-time'}
+
 {
 	hooks:
 		['CONNECT']: =>
@@ -17,6 +20,8 @@ garb_batch ==> setmetatable(@, {__gc: =>
 				ircv3_caps: serve_self {}
 				batches:    serve_self {gc: {}, garbage: garb_batch}
 			}
+			for cap in *caps
+				@fire_hook 'REQ_CAP'
 	handlers:
 		['BATCH']: (prefix, args, trail, tags)=>
 			tag_type, tag = args[1]\match '(.)(.+)'
@@ -156,32 +161,29 @@ garb_batch ==> setmetatable(@, {__gc: =>
 				@channels[channel].users[nick] = nil
 			@users[nick] = nil
 		['CAP']: (prefix, args, trailing)=>
-			caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
-				'chghost', 'server-time'}
 			to_process = {} if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NAK'
 			if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NEW' or args[2] == 'DEL'
 				for item in trailing\gmatch '%S+'
+					local processed
 					for cap in *caps
 						if item == cap
-							@fire_hook 'REQ_CAP' if args[2] == 'LS'
 							to_process[#to_process + 1] = cap
+							processed = true
 			if args[2] == 'LS'
-				@send_raw ('CAP REQ :%s')\format table.concat(to_process, ' ')
+				if #to_process > 0
+					@send_raw ('CAP REQ :%s')\format table.concat(to_process, ' ')
+				for i=#to_process, #caps
+					@fire_hook 'ACK_CAP'
 			elseif args[2] == 'NEW'
 				to_send = {}
 				for item in trailing\gmatch '%S+'
 					for cap in *caps
 						if item == cap
-							@fire_hook 'REQ_CAP'
 							to_send[#to_send + 1] = item
 				@send_raw ('CAP REQ :%s')\format table.concat(to_send, ' ')
 			elseif args[2] == 'DEL'
-				to_send = {}
 				for item in trailing\gmatch '%S+'
-					for cap in *caps
-						if item == cap
-							@fire_hook 'DEL_CAP'
-							to_send[#to_send + 1] = item
+					@ircv3_caps[item] = nil
 			elseif args[2] == 'ACK'
 				for cap in *to_process
 					key, value = cap\match '^(.-)=(.+)'

@@ -27,6 +27,8 @@ patterns = {
 
 serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 
+caps = {'echo-message', 'invite-notify'}
+
 {
 	hooks:
 		['NETJOIN']: =>
@@ -39,6 +41,9 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 				Logger.log patterns.NETJOIN\format channel, table.concat(channel_user_list, ', ')
 		['NETSPLIT']: =>
 			Logger.log patterns.NETSPLIT\format table.concat(batches.netsplit, ', ')
+		['CONNECT']: =>
+			for cap in *caps
+				@fire_hook 'REQ_CAP'
 	handlers:
 		['JOIN']: (prefix, args, trail, tags={})=>
 			-- user JOINs a channel
@@ -121,18 +126,35 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 			channel = args[2]
 			Logger.print patterns.INVITE\format channel, nick, args[1]
 		['CAP']: (prefix, args, trailing)=>
-			caps = {'echo-message', 'invite-notify'}
-			for cap in *caps
-				if args[2] == 'LS'
-					for item in trailing\gmatch '%S+'
+			to_process = {} if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NAK'
+			if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NEW' or args[2] == 'DEL'
+				for item in trailing\gmatch '%S+'
+					local processed
+					for cap in *caps
 						if item == cap
-							@send_raw 'CAP REQ ' .. item
-							@fire_hook 'REQ_CAP'
-				elseif args[2] == 'ACK' or args[2] == 'NAK'
-					local has_cap
-					for item in trailing\gmatch '%S+'
+							to_process[#to_process + 1] = cap
+							processed = true
+			if args[2] == 'LS'
+				if #to_process > 0
+					@send_raw ('CAP REQ :%s')\format table.concat(to_process, ' ')
+				for i=#to_process, #caps
+					@fire_hook 'ACK_CAP'
+			elseif args[2] == 'NEW'
+				to_send = {}
+				for item in trailing\gmatch '%S+'
+					for cap in *caps
 						if item == cap
-							has_cap = true
-					@server.ircv3_caps[cap] = true if has_cap and args[2] == 'ACK'
-					@fire_hook 'ACK_CAP' if has_cap
+							to_send[#to_send + 1] = item
+				@send_raw ('CAP REQ :%s')\format table.concat(to_send, ' ')
+			elseif args[2] == 'DEL'
+				for item in trailing\gmatch '%S+'
+					@ircv3_caps[item] = nil
+			elseif args[2] == 'ACK'
+				for cap in *to_process
+					key, value = cap\match '^(.-)=(.+)'
+					if value
+						@server.ircv3_caps[key] = value
+					else
+						@server.ircv3_caps[cap] = true
+					@fire_hook 'ACK_CAP'
 }

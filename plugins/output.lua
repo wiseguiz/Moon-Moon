@@ -30,6 +30,10 @@ serve_self = function(self)
     end
   })
 end
+local caps = {
+  'echo-message',
+  'invite-notify'
+}
 return {
   hooks = {
     ['NETJOIN'] = function(self)
@@ -49,6 +53,12 @@ return {
     end,
     ['NETSPLIT'] = function(self)
       return Logger.log(patterns.NETSPLIT:format(table.concat(batches.netsplit, ', ')))
+    end,
+    ['CONNECT'] = function(self)
+      for _index_0 = 1, #caps do
+        local cap = caps[_index_0]
+        self:fire_hook('REQ_CAP')
+      end
     end
   },
   handlers = {
@@ -167,32 +177,54 @@ return {
       return Logger.print(patterns.INVITE:format(channel, nick, args[1]))
     end,
     ['CAP'] = function(self, prefix, args, trailing)
-      local caps = {
-        'echo-message',
-        'invite-notify'
-      }
-      for _index_0 = 1, #caps do
-        local cap = caps[_index_0]
-        if args[2] == 'LS' then
-          for item in trailing:gmatch('%S+') do
+      local to_process
+      if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NAK' then
+        to_process = { }
+      end
+      if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NEW' or args[2] == 'DEL' then
+        for item in trailing:gmatch('%S+') do
+          local processed
+          for _index_0 = 1, #caps do
+            local cap = caps[_index_0]
             if item == cap then
-              self:send_raw('CAP REQ ' .. item)
-              self:fire_hook('REQ_CAP')
+              to_process[#to_process + 1] = cap
+              processed = true
             end
           end
-        elseif args[2] == 'ACK' or args[2] == 'NAK' then
-          local has_cap
-          for item in trailing:gmatch('%S+') do
+        end
+      end
+      if args[2] == 'LS' then
+        if #to_process > 0 then
+          self:send_raw(('CAP REQ :%s'):format(table.concat(to_process, ' ')))
+        end
+        for i = #to_process, #caps do
+          self:fire_hook('ACK_CAP')
+        end
+      elseif args[2] == 'NEW' then
+        local to_send = { }
+        for item in trailing:gmatch('%S+') do
+          for _index_0 = 1, #caps do
+            local cap = caps[_index_0]
             if item == cap then
-              has_cap = true
+              to_send[#to_send + 1] = item
             end
           end
-          if has_cap and args[2] == 'ACK' then
+        end
+        return self:send_raw(('CAP REQ :%s'):format(table.concat(to_send, ' ')))
+      elseif args[2] == 'DEL' then
+        for item in trailing:gmatch('%S+') do
+          self.ircv3_caps[item] = nil
+        end
+      elseif args[2] == 'ACK' then
+        for _index_0 = 1, #to_process do
+          local cap = to_process[_index_0]
+          local key, value = cap:match('^(.-)=(.+)')
+          if value then
+            self.server.ircv3_caps[key] = value
+          else
             self.server.ircv3_caps[cap] = true
           end
-          if has_cap then
-            self:fire_hook('ACK_CAP')
-          end
+          self:fire_hook('ACK_CAP')
         end
       end
     end
