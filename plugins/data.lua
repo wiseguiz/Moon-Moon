@@ -17,6 +17,14 @@ garb_batch = function(self)
     end
   })
 end
+local caps = {
+  'extended-join',
+  'multi-prefix',
+  'away-notify',
+  'account-notify',
+  'chghost',
+  'server-time'
+}
 return {
   hooks = {
     ['CONNECT'] = function(self)
@@ -30,6 +38,10 @@ return {
           garbage = garb_batch
         })
       }
+      for _index_0 = 1, #caps do
+        local cap = caps[_index_0]
+        self:fire_hook('REQ_CAP')
+      end
     end
   },
   handlers = {
@@ -44,7 +56,7 @@ return {
       end
     end,
     ['005'] = function(self, prefix, args)
-      local caps = {
+      caps = {
         select(2, unpack(args))
       }
       for _, cap in pairs(caps) do
@@ -226,55 +238,43 @@ return {
       self.users[nick] = nil
     end,
     ['CAP'] = function(self, prefix, args, trailing)
-      local caps = {
-        'extended-join',
-        'multi-prefix',
-        'away-notify',
-        'account-notify',
-        'chghost',
-        'server-time'
-      }
       local to_process
       if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NAK' then
         to_process = { }
       end
       if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NEW' or args[2] == 'DEL' then
         for item in trailing:gmatch('%S+') do
+          local processed
           for _index_0 = 1, #caps do
             local cap = caps[_index_0]
             if item == cap then
-              if args[2] == 'LS' then
-                self:fire_hook('REQ_CAP')
-              end
               to_process[#to_process + 1] = cap
+              processed = true
             end
           end
         end
       end
       if args[2] == 'LS' then
-        return self:send_raw(('CAP REQ :%s'):format(table.concat(to_process, ' ')))
+        if #to_process > 0 then
+          self:send_raw(('CAP REQ :%s'):format(table.concat(to_process, ' ')))
+        end
+        for i = #to_process, #caps do
+          self:fire_hook('ACK_CAP')
+        end
       elseif args[2] == 'NEW' then
         local to_send = { }
         for item in trailing:gmatch('%S+') do
           for _index_0 = 1, #caps do
             local cap = caps[_index_0]
             if item == cap then
-              self:fire_hook('REQ_CAP')
               to_send[#to_send + 1] = item
             end
           end
         end
         return self:send_raw(('CAP REQ :%s'):format(table.concat(to_send, ' ')))
       elseif args[2] == 'DEL' then
-        local to_send = { }
         for item in trailing:gmatch('%S+') do
-          for _index_0 = 1, #caps do
-            local cap = caps[_index_0]
-            if item == cap then
-              self:fire_hook('DEL_CAP')
-              to_send[#to_send + 1] = item
-            end
-          end
+          self.ircv3_caps[item] = nil
         end
       elseif args[2] == 'ACK' then
         for _index_0 = 1, #to_process do

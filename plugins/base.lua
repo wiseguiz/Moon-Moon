@@ -41,7 +41,7 @@ return {
       end
       self.data.last_connect = os.time()
       self:send_raw('CAP LS 302')
-      if not self:fire_hook('CAP_LS') then
+      if not self:fire_hook('LS_CAP') then
         return self:send_raw('CAP END')
       end
     end,

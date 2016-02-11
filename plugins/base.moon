@@ -29,7 +29,7 @@ local last_connect
 			@data = {} if not @data
 			@data.last_connect = os.time()
 			@send_raw 'CAP LS 302'
-			if not @fire_hook 'CAP_LS'
+			if not @fire_hook 'LS_CAP'
 				@send_raw 'CAP END'
 		['REQ_CAP']: =>
 			set_caps += 1
