@@ -59,6 +59,8 @@ class IRCConnection
 		if ssl
 			Logger.debug 'Starting TLS exchange...'
 			@socket\starttls!
+			ssl_object = @socket\checktls!
+			ssl_object\setHostName host
 			Logger.debug 'Started TLS exchange'
 		Logger.print Logger.level.okay .. '--- Connected'
 		@fire_hook 'CONNECT'

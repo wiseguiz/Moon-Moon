@@ -74,6 +74,8 @@ do
       if ssl then
         Logger.debug('Starting TLS exchange...')
         self.socket:starttls()
+        local ssl_object = self.socket:checktls()
+        ssl_object:setHostName(host)
         Logger.debug('Started TLS exchange')
       end
       Logger.print(Logger.level.okay .. '--- Connected')
