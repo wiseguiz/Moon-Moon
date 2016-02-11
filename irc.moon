@@ -5,7 +5,6 @@ escapers =  {['s']: ' ', ['r']: '\r', ['n']: '\n', [';']: ';'}
 
 class IRCConnection
 	new: (server, port=6697, config={})=>
-		print port
 		assert(server)
 		@config = :server, :port, :config, ssl: port == 6697
 		for k, v in pairs(config)
@@ -49,7 +48,6 @@ class IRCConnection
 		host = @config.server
 		port = @config.port
 		ssl  = @config.ssl
-		print ssl
 		debug_msg = ('Connecting... {host: "%s", port: "%s"}')\format host, port
 		---
 		@config.nick = 'Moon-Moon' if not @config.nick
@@ -58,7 +56,7 @@ class IRCConnection
 		---
 		Logger.debug debug_msg, Logger.level.warn .. '--- Connecting...'
 		@socket = assert socket.connect{:host, :port}
-		if @config.ssl
+		if ssl
 			Logger.debug 'Starting TLS exchange...'
 			@socket\starttls!
 			Logger.debug 'Started TLS exchange'
@@ -70,7 +68,7 @@ class IRCConnection
 		pass = @config.password
 		Logger.print Logger.level.warn .. '--- Sending authentication data'
 		@send_raw ('NICK %s')\format nick
-		if pass and @config.ssl
+		if pass and ssl
 			Logger.debug '*** Sending password'
 			@send_raw ('PASS :%s')\format pass
 		elseif pass
