@@ -55,8 +55,7 @@ return {
       return Logger.log(patterns.NETSPLIT:format(table.concat(batches.netsplit, ', ')))
     end,
     ['CONNECT'] = function(self)
-      for _index_0 = 1, #caps do
-        local cap = caps[_index_0]
+      for i = 1, #caps do
         self:fire_hook('REQ_CAP')
       end
     end
