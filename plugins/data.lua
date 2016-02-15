@@ -1,4 +1,3 @@
-local Logger = require('logger')
 local serve_self
 serve_self = function(self)
   return setmetatable(self, {
@@ -38,8 +37,7 @@ return {
           garbage = garb_batch
         })
       }
-      for _index_0 = 1, #caps do
-        local cap = caps[_index_0]
+      for i = 1, #caps do
         self:fire_hook('REQ_CAP')
       end
     end

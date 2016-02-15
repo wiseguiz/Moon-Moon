@@ -1,5 +1,3 @@
-Logger = require 'logger'
-
 serve_self ==> setmetatable(@, {__call: =>pairs(@)})
 garb_batch ==> setmetatable(@, {__gc: =>
 	for k, v in pairs @gc
@@ -20,7 +18,7 @@ caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 				ircv3_caps: serve_self {}
 				batches:    serve_self {gc: {}, garbage: garb_batch}
 			}
-			for cap in *caps
+			for i=1, #caps
 				@fire_hook 'REQ_CAP'
 	handlers:
 		['BATCH']: (prefix, args, trail, tags)=>

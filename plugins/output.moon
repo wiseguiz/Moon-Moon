@@ -42,7 +42,7 @@ caps = {'echo-message', 'invite-notify'}
 		['NETSPLIT']: =>
 			Logger.log patterns.NETSPLIT\format table.concat(batches.netsplit, ', ')
 		['CONNECT']: =>
-			for cap in *caps
+			for i=1, #caps
 				@fire_hook 'REQ_CAP'
 	handlers:
 		['JOIN']: (prefix, args, trail, tags={})=>
