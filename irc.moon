@@ -74,7 +74,7 @@ class IRCConnection
 			Logger.debug '*** Sending password'
 			@send_raw ('PASS :%s')\format pass
 		elseif pass
-			Logger.debug Logger.level.error .. '*** Not sending password: TLS not enabled ***'
+			Logger.print Logger.level.error .. '*** Not sending password: TLS not enabled ***'
 		@send_raw ('USER %s * * :%s')\format user, real
 		debug_msg = ('Sent authentication data: {nickname: %s, username: %s, realname: %s}')\format nick, user, real
 		Logger.debug debug_msg, Logger.level.okay .. '--- Sent authentication data'

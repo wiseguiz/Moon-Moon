@@ -90,7 +90,7 @@ do
         Logger.debug('*** Sending password')
         self:send_raw(('PASS :%s'):format(pass))
       elseif pass then
-        Logger.debug(Logger.level.error .. '*** Not sending password: TLS not enabled ***')
+        Logger.print(Logger.level.error .. '*** Not sending password: TLS not enabled ***')
       end
       self:send_raw(('USER %s * * :%s'):format(user, real))
       debug_msg = ('Sent authentication data: {nickname: %s, username: %s, realname: %s}'):format(nick, user, real)
