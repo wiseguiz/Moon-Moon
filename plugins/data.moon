@@ -162,15 +162,13 @@ caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 			to_process = {} if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NAK'
 			if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NEW' or args[2] == 'DEL'
 				for item in trailing\gmatch '%S+'
-					local processed
 					for cap in *caps
 						if item == cap
 							to_process[#to_process + 1] = cap
-							processed = true
 			if args[2] == 'LS'
 				if #to_process > 0
 					@send_raw ('CAP REQ :%s')\format table.concat(to_process, ' ')
-				for i=#to_process, #caps
+				for i=#to_process + 1, #caps
 					@fire_hook 'ACK_CAP'
 			elseif args[2] == 'NEW'
 				to_send = {}
