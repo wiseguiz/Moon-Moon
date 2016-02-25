@@ -69,13 +69,12 @@ do
       Logger.debug(debug_msg, Logger.level.warn .. '--- Connecting...')
       self.socket = assert(socket.connect({
         host = host,
-        port = port
+        port = port,
+        sendname = true
       }))
       if ssl then
         Logger.debug('Starting TLS exchange...')
         self.socket:starttls()
-        local ssl_object = self.socket:checktls()
-        ssl_object:setHostName(host)
         Logger.debug('Started TLS exchange')
       end
       Logger.print(Logger.level.okay .. '--- Connected')

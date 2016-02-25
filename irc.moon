@@ -55,12 +55,10 @@ class IRCConnection
 		@config.realname = 'Moon Moon: MoonScript IRC Bot' if not @config.realname
 		---
 		Logger.debug debug_msg, Logger.level.warn .. '--- Connecting...'
-		@socket = assert socket.connect{:host, :port}
+		@socket = assert socket.connect{:host, :port, sendname: true}
 		if ssl
 			Logger.debug 'Starting TLS exchange...'
 			@socket\starttls!
-			ssl_object = @socket\checktls!
-			ssl_object\setHostName host
 			Logger.debug 'Started TLS exchange'
 		Logger.print Logger.level.okay .. '--- Connected'
 		@fire_hook 'CONNECT'

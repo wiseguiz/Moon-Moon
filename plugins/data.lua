@@ -26,7 +26,7 @@ local caps = {
 }
 return {
   hooks = {
-    ['CONNECT'] = function(self)
+    ['LS_CAP'] = function(self)
       self.channels = serve_self({ })
       self.users = serve_self({ })
       self.server = {

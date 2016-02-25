@@ -9,7 +9,7 @@ caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 
 {
 	hooks:
-		['CONNECT']: =>
+		['LS_CAP']: =>
 			-- Welcome
 			@channels = serve_self {}
 			@users    = serve_self {}
