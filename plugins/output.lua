@@ -182,12 +182,10 @@ return {
       end
       if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NEW' or args[2] == 'DEL' then
         for item in trailing:gmatch('%S+') do
-          local processed
           for _index_0 = 1, #caps do
             local cap = caps[_index_0]
             if item == cap then
               to_process[#to_process + 1] = cap
-              processed = true
             end
           end
         end
@@ -196,7 +194,7 @@ return {
         if #to_process > 0 then
           self:send_raw(('CAP REQ :%s'):format(table.concat(to_process, ' ')))
         end
-        for i = #to_process, #caps do
+        for i = #to_process + 1, #caps do
           self:fire_hook('ACK_CAP')
         end
       elseif args[2] == 'NEW' then
