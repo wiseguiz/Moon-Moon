@@ -102,9 +102,12 @@ do
       return self:fire_hook('DISCONNECT')
     end,
     send_raw = function(self, ...)
-      return self.socket:write(table.concat({
+      self.socket:write(table.concat({
         ...
       }, ' ') .. '\n')
+      return Logger.debug('==> ' .. table.concat({
+        ...
+      }, ' '))
     end,
     send = function(self, name, pattern, ...)
       return self.senders[name](pattern:format(...))

@@ -5,7 +5,7 @@ garb_batch ==> setmetatable(@, {__gc: =>
 })
 
 caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
-	'chghost', 'server-time'}
+	'chghost', 'server-time', 'echo-message', 'invite-notify'}
 
 {
 	hooks:
@@ -29,8 +29,8 @@ caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 				@server.batches[tag] = nil
 		['005']: (prefix, args)=>
 			-- Capabilities
-			caps = {select 2, unpack args}
-			for _, cap in pairs caps
+			isupport_caps = {select 2, unpack args}
+			for cap in *isupport_caps
 				if cap\find "="
 					key, value = cap\match '^(.-)=(.+)'
 					@server.caps[key] = value

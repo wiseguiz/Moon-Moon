@@ -22,7 +22,9 @@ local caps = {
   'away-notify',
   'account-notify',
   'chghost',
-  'server-time'
+  'server-time',
+  'echo-message',
+  'invite-notify'
 }
 return {
   hooks = {
@@ -54,10 +56,11 @@ return {
       end
     end,
     ['005'] = function(self, prefix, args)
-      caps = {
+      local isupport_caps = {
         select(2, unpack(args))
       }
-      for _, cap in pairs(caps) do
+      for _index_0 = 1, #isupport_caps do
+        local cap = isupport_caps[_index_0]
         if cap:find("=") then
           local key, value = cap:match('^(.-)=(.+)')
           self.server.caps[key] = value
