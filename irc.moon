@@ -83,6 +83,7 @@ class IRCConnection
 
 	send_raw: (...)=>
 		@socket\write table.concat({...}, ' ') .. '\n'
+		Logger.debug '==> ' .. table.concat {...}, ' '
 
 	send: (name, pattern, ...)=>
 		@senders[name] pattern\format ...

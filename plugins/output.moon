@@ -27,8 +27,6 @@ patterns = {
 
 serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 
-caps = {'echo-message', 'invite-notify'}
-
 {
 	hooks:
 		['NETJOIN']: =>
@@ -41,9 +39,6 @@ caps = {'echo-message', 'invite-notify'}
 				Logger.log patterns.NETJOIN\format channel, table.concat(channel_user_list, ', ')
 		['NETSPLIT']: =>
 			Logger.log patterns.NETSPLIT\format table.concat(batches.netsplit, ', ')
-		['LS_CAP']: =>
-			for i=1, #caps
-				@fire_hook 'REQ_CAP'
 	handlers:
 		['JOIN']: (prefix, args, trail, tags={})=>
 			-- user JOINs a channel
@@ -125,34 +120,4 @@ caps = {'echo-message', 'invite-notify'}
 			nick = prefix\match('^(.-)!') or prefix
 			channel = args[2]
 			Logger.print patterns.INVITE\format channel, nick, args[1]
-		['CAP']: (prefix, args, trailing)=>
-			to_process = {} if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NAK'
-			if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NEW' or args[2] == 'DEL'
-				for item in trailing\gmatch '%S+'
-					for cap in *caps
-						if item == cap
-							to_process[#to_process + 1] = cap
-			if args[2] == 'LS'
-				if #to_process > 0
-					@send_raw ('CAP REQ :%s')\format table.concat(to_process, ' ')
-				for i=#to_process + 1, #caps
-					@fire_hook 'ACK_CAP'
-			elseif args[2] == 'NEW'
-				to_send = {}
-				for item in trailing\gmatch '%S+'
-					for cap in *caps
-						if item == cap
-							to_send[#to_send + 1] = item
-				@send_raw ('CAP REQ :%s')\format table.concat(to_send, ' ')
-			elseif args[2] == 'DEL'
-				for item in trailing\gmatch '%S+'
-					@ircv3_caps[item] = nil
-			elseif args[2] == 'ACK'
-				for cap in *to_process
-					key, value = cap\match '^(.-)=(.+)'
-					if value
-						@server.ircv3_caps[key] = value
-					else
-						@server.ircv3_caps[cap] = true
-					@fire_hook 'ACK_CAP'
 }
