@@ -1,5 +1,4 @@
 cqueues = require 'cqueues'
-set_caps = 0
 local last_connect
 {
 	handlers:
@@ -28,13 +27,14 @@ local last_connect
 		['CONNECT']: =>
 			@data = {} if not @data
 			@data.last_connect = os.time()
+			@data.set_caps = 0
 			@send_raw 'CAP LS 302'
 			if not @fire_hook 'LS_CAP'
 				@send_raw 'CAP END'
 		['REQ_CAP']: =>
-			set_caps += 1
+			@data.set_caps += 1
 		['ACK_CAP']: =>
-			set_caps -= 1
-			if set_caps == 0
+			@data.set_caps -= 1
+			if @data.set_caps == 0
 				@send_raw 'CAP END'
 }

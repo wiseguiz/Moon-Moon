@@ -41,7 +41,7 @@ caps = {'echo-message', 'invite-notify'}
 				Logger.log patterns.NETJOIN\format channel, table.concat(channel_user_list, ', ')
 		['NETSPLIT']: =>
 			Logger.log patterns.NETSPLIT\format table.concat(batches.netsplit, ', ')
-		['CONNECT']: =>
+		['LS_CAP']: =>
 			for i=1, #caps
 				@fire_hook 'REQ_CAP'
 	handlers:

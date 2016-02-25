@@ -1,5 +1,4 @@
 local cqueues = require('cqueues')
-local set_caps = 0
 local last_connect
 return {
   handlers = {
@@ -40,17 +39,18 @@ return {
         self.data = { }
       end
       self.data.last_connect = os.time()
+      self.data.set_caps = 0
       self:send_raw('CAP LS 302')
       if not self:fire_hook('LS_CAP') then
         return self:send_raw('CAP END')
       end
     end,
     ['REQ_CAP'] = function(self)
-      set_caps = set_caps + 1
+      self.data.set_caps = self.data.set_caps + 1
     end,
     ['ACK_CAP'] = function(self)
-      set_caps = set_caps - 1
-      if set_caps == 0 then
+      self.data.set_caps = self.data.set_caps - 1
+      if self.data.set_caps == 0 then
         return self:send_raw('CAP END')
       end
     end
