@@ -11,6 +11,7 @@ load_modules = function(folder)
   for file in lfs.dir(folder) do
     if file:match("%.lua$") then
       local func = assert(loadfile(folder .. '/' .. file))
+      table.insert(mods, func())
     end
   end
 end

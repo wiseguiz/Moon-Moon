@@ -10,6 +10,7 @@ load_modules = (folder)->
 	for file in lfs.dir folder
 		if file\match "%.lua$"
 			func = assert loadfile folder .. '/' .. file
+			table.insert mods, func!
 
 for module_folder in *{'plugins', 'modules'}
 	load_modules module_folder if lfs.attributes(module_folder, 'mode') == 'directory'
