@@ -6,10 +6,13 @@ lfs     = require 'lfs'
 Logger.set_debug true if os.getenv 'DEBUG'
 
 mods = {}
-for file in lfs.dir 'plugins'
-	if file\match "%.lua$"
-		func = assert loadfile 'plugins/' .. file
-		table.insert mods, func!
+load_modules = (folder)->
+	for file in lfs.dir folder
+		if file\match "%.lua$"
+			func = assert loadfile folder .. '/' .. file
+
+for module_folder in *{'plugins', 'modules'}
+	load_modules module_folder if lfs.attributes(module_folder, 'mode') == 'directory'
 
 bots = {}
 for file in lfs.dir 'configs'

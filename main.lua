@@ -6,10 +6,22 @@ if os.getenv('DEBUG') then
   Logger.set_debug(true)
 end
 local mods = { }
-for file in lfs.dir('plugins') do
-  if file:match("%.lua$") then
-    local func = assert(loadfile('plugins/' .. file))
-    table.insert(mods, func())
+local load_modules
+load_modules = function(folder)
+  for file in lfs.dir(folder) do
+    if file:match("%.lua$") then
+      local func = assert(loadfile(folder .. '/' .. file))
+    end
+  end
+end
+local _list_0 = {
+  'plugins',
+  'modules'
+}
+for _index_0 = 1, #_list_0 do
+  local module_folder = _list_0[_index_0]
+  if lfs.attributes(module_folder, 'mode') == 'directory' then
+    load_modules(module_folder)
   end
 end
 local bots = { }
