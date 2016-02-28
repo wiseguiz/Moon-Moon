@@ -28,7 +28,15 @@ for file in lfs.dir 'configs'
 
 		for _, mod in pairs(mods)
 			bot\load_modules mod
-		bot\connect!
+		local success
+		for i=1, 3 do -- three tries
+			ok, err = bot\connect!
+			success = ok
+			if not ok
+				Logger.print Logger.level.error .. '*** Unable to connect: ' .. data.host
+
+		if not success
+			logger.print Logger.level.fatal .. '*** Not connecting anymore for: ' .. file
 
 		table.insert(bots, bot)
 
