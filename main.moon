@@ -28,21 +28,26 @@ for file in lfs.dir 'configs'
 
 		for _, mod in pairs(mods)
 			bot\load_modules mod
-		local success
-		for i=1, 3 do -- three tries
-			ok, err = bot\connect!
-			success = ok
-			if not ok
-				Logger.print Logger.level.error .. '*** Unable to connect: ' .. data.host
-
-		if not success
-			logger.print Logger.level.fatal .. '*** Not connecting anymore for: ' .. file
 
 		table.insert(bots, bot)
 
 main = (queue = require 'queue')->
 	for _, bot in pairs bots
-		queue\wrap -> bot\loop!
+		queue\wrap ->
+			local success
+			for i=1, 3 do -- three tries
+				ok, err = pcall bot.connect, bot
+				success = ok
+				if not ok
+					Logger.print Logger.level.error .. '*** Unable to connect: ' .. data.host
+					Logger.debug Logger.level.error .. '*** ' .. err
+				else
+					break
+
+			if not success
+				Logger.print Logger.level.fatal .. '*** Not connecting anymore for: ' .. file
+				return
+			bot\loop!
 
 success, fw = pcall require, 'astronomy'
 if not success then
