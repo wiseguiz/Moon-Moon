@@ -39,17 +39,6 @@ for file in lfs.dir('configs') do
     for _, mod in pairs(mods) do
       bot:load_modules(mod)
     end
-    local success
-    for i = 1, 3 do
-      local ok, err = bot:connect()
-      success = ok
-      if not ok then
-        Logger.print(Logger.level.error .. '*** Unable to connect: ' .. data.host)
-      end
-    end
-    if not success then
-      logger.print(Logger.level.fatal .. '*** Not connecting anymore for: ' .. file)
-    end
     table.insert(bots, bot)
   end
 end
@@ -60,6 +49,21 @@ main = function(queue)
   end
   for _, bot in pairs(bots) do
     queue:wrap(function()
+      local success
+      for i = 1, 3 do
+        local ok, err = pcall(bot.connect, bot)
+        success = ok
+        if not ok then
+          Logger.print(Logger.level.error .. '*** Unable to connect: ' .. data.host)
+          Logger.debug(Logger.level.error .. '*** ' .. err)
+        else
+          break
+        end
+      end
+      if not success then
+        Logger.print(Logger.level.fatal .. '*** Not connecting anymore for: ' .. file)
+        return 
+      end
       return bot:loop()
     end)
   end
