@@ -29,6 +29,8 @@ for file in lfs.dir 'configs'
 		for _, mod in pairs(mods)
 			bot\load_modules mod
 
+		bot.user_data = data
+
 		table.insert(bots, bot)
 
 main = (queue = require 'queue')->
@@ -39,7 +41,7 @@ main = (queue = require 'queue')->
 				ok, err = pcall bot.connect, bot
 				success = ok
 				if not ok
-					Logger.print Logger.level.error .. '*** Unable to connect: ' .. data.host
+					Logger.print Logger.level.error .. '*** Unable to connect: ' .. bot.user_data.host
 					Logger.debug Logger.level.error .. '*** ' .. err
 				else
 					break
