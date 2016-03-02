@@ -2,9 +2,9 @@
 
 ### Contributors
 
-| Name      | Email             | GitHub Account |
-| ----------|-------------------|--------------- |
-| Ryan Rion | ryan@hashbang.sh  | ChickenNuggers |
+| Name      | Email            | GitHub Account |
+| ----------|------------------|--------------- |
+| Ryan Rion | ryan@hashbang.sh | ChickenNuggers |
 
 ### Project Information
 

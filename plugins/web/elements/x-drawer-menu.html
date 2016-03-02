@@ -1,0 +1,54 @@
+<!-- vim:set noet sts=0 sw=3 ts=3: -->
+<dom-module id="x-drawer-menu">
+	<template>
+		<style is="custom-style">
+			:root {
+				width: 100%;
+			}
+			a {
+				width: 100%;
+				padding-left: 16px;
+				padding-right: 16px;
+				min-height: 48px;
+				transition: color 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+
+				display: flex;
+				flex-decoration: row;
+				align-items: center;
+			}
+
+			a:hover {
+				color: var(--primary-color);
+			}
+		</style>
+		<template is="dom-repeat" items="{{menu_items}}">
+			<a data-id="{{item.id}}">{{item.name}}</a>
+		</template>
+	</template>
+	<script>
+		menu_items = [
+			{
+				name: "Log In",
+				id: "login"
+			}
+		];
+		function_items = {
+			login: function() {
+					document.querySelector("x-login-form#login paper-dialog[login" +
+							"-dialog]").open()
+				}
+		}
+		Polymer({
+			ready: function(){
+				this.menu_items = menu_items
+			},
+			listeners: {
+				'tap': 'activate_link'
+			},
+			activate_link: function(e) {
+				id = e.srcElement.dataId;
+				function_items[id]();
+			}
+		})
+	</script>
+</dom-module>

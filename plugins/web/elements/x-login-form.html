@@ -1,0 +1,48 @@
+<!-- vim:set noet sts=0 sw=3 ts=3: -->
+<link rel="import" href="/bower_components/polymer/polymer.html">
+<link rel="import" href="/bower_components/paper-button/paper-button.html">
+<link rel="import" href="/bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="/bower_components/paper-input/paper-input.html">
+
+<dom-module id="x-login-form">
+	<template>
+		<style is="custom-style">
+			paper-dialog[login-dialog] {
+				width: 70%;
+				max-width: 600px;
+				padding-top: 24px;
+				padding-bottom: 14px;
+			}
+			paper-dialog[login-dialog] ::content > * {
+				margin: 0px;
+			}
+		</style>
+		<paper-dialog login-dialog with-backdrop modal>
+			<!-- Make the element a modal so users
+				have to specifically cancel and override
+				the confirm button to perform the request
+				inside of the modal -->
+			<h2>Please log in to continue</h2>
+			<paper-input label="Username" id="username"></paper-input>
+			<paper-input label="Password" type="password"></paper-input>
+			<div class="buttons">
+				<paper-button dialog-dismiss>Cancel</paper-button>
+				<paper-button dialog-confirm>Log In</paper-button>
+				<!-- ::TODO:: Does the above need to be 'confirm'? What is the
+		 			reason to use 'confirm'?
+				
+					::TODO:: wipe items on dismiss -->
+			</div>
+		</paper-dialog>
+	</template>
+	<script>
+		/* ::TODO::
+			- Asynchronous request to login
+			- <Eventually> prompt for security key
+			- Security key auth
+			- Close dialog */
+		Polymer({
+			is: 'x-login-form'
+		});
+	</script>
+</dom-module>

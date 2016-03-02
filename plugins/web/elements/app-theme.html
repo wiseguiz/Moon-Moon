@@ -1,0 +1,39 @@
+<link rel="import" href="/bower_components/polymer/polymer.html">
+<link rel="import" href="/bower_components/paper-styles/color.html">
+<style is="custom-style">/* vim:set noet sts=0 sw=3 ts=3: */
+	body[fullbleed] {
+		margin: 0px;
+		height: 100vh;
+	}
+	* {
+		@apply(--paper-font-common-base);
+	}
+	:root {
+		--app-border: 1px solid var(--paper-grey-300); /* ::border:: */
+		--text-color: rgba(0, 0, 0, 0.87); /* ::color:: ::text:: */
+		--primary-color: var(--paper-blue-500);
+		--secondary-color: var(--paper-blue-700);
+		--primary-accent: var(--paper-pink-500);
+		--secondary-accent: var(--paper-pink-700);
+	}
+	paper-header-panel[main] {
+		background-color: var(--paper-grey-100); /* ::color:: */
+	}
+	paper-header-panel[main] paper-toolbar {
+		background-color: var(--primary-color); /* ::color:: */
+	}
+	paper-header-panel[drawer] {
+		border-right: var(--app-border); /* ::border:: */
+		background-color: var(--paper-grey-50); /* ::color:: */
+	}
+	paper-header-panel[drawer] paper-toolbar {
+		background-color: var(--paper-grey-100); /* ::color:: */
+		border-bottom: var(--app-border); /* ::border:: */
+		color: var(--text-color); /* ::color:: ::text:: */
+		@apply(--paper-font-title); /* ::text:: */
+		margin-bottom: 16px; /* ::margin:: */
+	}
+	paper-progress {
+		--paper-progress-active-color: var(--primary-accent);
+	}
+</style>
