@@ -39,6 +39,8 @@ for file in lfs.dir('configs') do
     for _, mod in pairs(mods) do
       bot:load_modules(mod)
     end
+    bot.user_data = data
+    bot.config = file:match("(.+).ini$")
     table.insert(bots, bot)
   end
 end
@@ -54,14 +56,14 @@ main = function(queue)
         local ok, err = pcall(bot.connect, bot)
         success = ok
         if not ok then
-          Logger.print(Logger.level.error .. '*** Unable to connect: ' .. data.host)
+          Logger.print(Logger.level.error .. '*** Unable to connect: ' .. bot.user_data.host)
           Logger.debug(Logger.level.error .. '*** ' .. err)
         else
           break
         end
       end
       if not success then
-        Logger.print(Logger.level.fatal .. '*** Not connecting anymore for: ' .. file)
+        Logger.print(Logger.level.fatal .. '*** Not connecting anymore for: ' .. bot.config)
         return 
       end
       return bot:loop()
