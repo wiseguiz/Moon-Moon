@@ -29,7 +29,8 @@ for file in lfs.dir 'configs'
 		for _, mod in pairs(mods)
 			bot\load_modules mod
 
-		bot.user_data = data
+		bot.user_data   = data
+		bot.config_file = file\match("(.+).ini$")
 
 		table.insert(bots, bot)
 
@@ -47,7 +48,7 @@ main = (queue = require 'queue')->
 					break
 
 			if not success
-				Logger.print Logger.level.fatal .. '*** Not connecting anymore for: ' .. file
+				Logger.print Logger.level.fatal .. '*** Not connecting anymore for: ' .. bot.config_file
 				return
 			bot\loop!
 
