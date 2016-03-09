@@ -7,21 +7,30 @@ if os.getenv('DEBUG') then
   Logger.set_debug(true)
 end
 local mods = { }
-local watching = { }
+local watching = {
+  dirty = nil
+}
 local load_modules
 load_modules = function(folder)
   for file in lfs.dir(folder) do
     local mod_date = lfs.attributes(folder .. '/' .. file, 'modification')
     if file:match("%.lua$") then
       if not watching[file] or watching[file] ~= mod_date then
-        local func = assert(loadfile(folder .. '/' .. file))
         if not watching[file] then
           Logger.print('Loading ' .. file)
         else
           Logger.print('Reloading ' .. file)
         end
-        table.insert(mods, func())
+        watching.dirty = true
         watching[file] = mod_date
+      end
+    end
+  end
+  if watching.dirty then
+    for file in lfs.dir(folder) do
+      if file:match("%.lua$") then
+        local func = assert(loadfile(folder .. '/' .. file))
+        table.insert(mods, func())
       end
     end
   end
@@ -72,12 +81,15 @@ main = function(queue)
       cqueues.sleep(5)
       pcall(function()
         load_modules_in_plugin_folders()
-        for _index_0 = 1, #bots do
-          local bot = bots[_index_0]
-          bot:clear_modules()
-          for _index_1 = 1, #mods do
-            local mod = mods[_index_1]
-            bot:load_modules(mod)
+        if watching.dirty then
+          watching.dirty = false
+          for _index_0 = 1, #bots do
+            local bot = bots[_index_0]
+            bot:clear_modules()
+            for _index_1 = 1, #mods do
+              local mod = mods[_index_1]
+              bot:load_modules(mod)
+            end
           end
         end
       end)
