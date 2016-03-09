@@ -3,6 +3,7 @@ garb_batch ==> setmetatable(@, {__gc: =>
 	for k, v in pairs @gc
 		pcall v
 })
+unpack = unpack or table.unpack
 
 caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 	'chghost', 'server-time', 'echo-message', 'invite-notify'}

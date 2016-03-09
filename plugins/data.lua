@@ -16,6 +16,7 @@ garb_batch = function(self)
     end
   })
 end
+local unpack = unpack or table.unpack
 local caps = {
   'extended-join',
   'multi-prefix',
