@@ -49,6 +49,11 @@ do
         end
       end
     end,
+    clear_modules = function(self)
+      self.senders = { }
+      self.handlers = { }
+      self.hooks = { }
+    end,
     connect = function(self)
       if self.socket then
         self.socket:shutdown()

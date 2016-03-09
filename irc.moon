@@ -41,6 +41,10 @@ class IRCConnection
 		if modules.hooks
 			for id, hook in pairs modules.hooks
 				@add_hook id, hook
+	clear_modules: ()=>
+		@senders = {}
+		@handlers = {}
+		@hooks = {}
 
 	connect: ()=>
 		if @socket
