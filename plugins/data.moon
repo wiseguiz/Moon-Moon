@@ -100,7 +100,7 @@ caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 			@users[old] = nil
 		['MODE']: (prefix, args)=>
 			-- User or bot called /mode
-			if args[1]\sub(1,1) == "#"
+			if args[1] and args[1]\sub(1,1) == "#"
 				@send_raw ('NAMES %s')\format args[1]
 		['353']: (prefix, args, trail)=>
 			-- Result of NAMES

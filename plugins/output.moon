@@ -1,10 +1,5 @@
 Logger = require 'logger'
 
-batches = {
-	netjoin:  {}
-	netsplit: {}
-}
-
 patterns = {
 	JOIN: "\00308[\003%s\00308]\003 \00309>\003 %s"
 	MODE: "\00308[\003%s\00308]\003 Mode %s by %s"
@@ -29,6 +24,12 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 
 {
 	hooks:
+		['CONNECT']: =>
+			@batches = {
+				netjoin:  {}
+				netsplit: {}
+			}
+
 		['NETJOIN']: =>
 			channels = {}
 			for user in *batches.netjoin

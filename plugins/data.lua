@@ -151,7 +151,7 @@ return {
       self.users[old] = nil
     end,
     ['MODE'] = function(self, prefix, args)
-      if args[1]:sub(1, 1) == "#" then
+      if args[1] and args[1]:sub(1, 1) == "#" then
         return self:send_raw(('NAMES %s'):format(args[1]))
       end
     end,
