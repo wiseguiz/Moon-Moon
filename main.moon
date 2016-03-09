@@ -1,32 +1,47 @@
-IRCConnection = require 'irc'
-Logger = require 'logger'
-cqueues = require 'cqueues'
-lfs     = require 'lfs'
+IRCConnection = require 'irc' -- vim:set noet sts=0 sw=3 ts=3:
+Logger        = require 'logger'
+cqueues       = require 'cqueues'
+lfs           = require 'lfs'
+
+wd = lfs.currentdir()
 
 Logger.set_debug true if os.getenv 'DEBUG'
 
 mods = {}
+watching = {}
 load_modules = (folder)->
 	for file in lfs.dir folder
+		mod_date = lfs.attributes folder .. '/' .. file, 'modification'
 		if file\match "%.lua$"
-			func = assert loadfile folder .. '/' .. file
-			table.insert mods, func!
+			if not watching[file] or watching[file] ~= mod_date
+				func = assert loadfile folder .. '/' .. file
+				if not watching[file]
+					Logger.print 'Loading ' .. file
+				else
+					Logger.print 'Reloading ' .. file
+				table.insert mods, func!
+				watching[file] = mod_date
 
-for module_folder in *{'plugins', 'modules'}
-	load_modules module_folder if lfs.attributes(module_folder, 'mode') == 'directory'
+load_modules_in_plugin_folders = ->
+	mods = {}
+	for module_folder in *{'plugins', 'modules'}
+		full_path = wd .. '/' .. module_folder
+		load_modules full_path if lfs.attributes(full_path, 'mode') == 'directory'
+
+load_modules_in_plugin_folders!
 
 bots = {}
 for file in lfs.dir 'configs'
 	if file\match "%.ini$"
 		data = {
-			dir: lfs.currentdir!
+			dir: wd
 		}
 		for line in io.lines('configs/' .. file)
 			key, value = assert line\match "^(.-)=(.+)$"
 			data[key] = value
 		bot  = IRCConnection data.host, data.port, data
 
-		for _, mod in pairs(mods)
+		for mod in *mods
 			bot\load_modules mod
 
 		bot.user_data   = data
@@ -35,7 +50,17 @@ for file in lfs.dir 'configs'
 		table.insert(bots, bot)
 
 main = (queue = require 'queue')->
-	for _, bot in pairs bots
+	queue\wrap -> -- Run load_modules after reloading modules
+		while true
+			cqueues.sleep 5
+			pcall ->
+				load_modules_in_plugin_folders!
+				for bot in *bots
+					bot\clear_modules!
+					for mod in *mods
+						bot\load_modules mod
+
+	for bot in *bots
 		queue\wrap ->
 			local success
 			for i=1, 3 do -- three tries
