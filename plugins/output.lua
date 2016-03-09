@@ -1,8 +1,4 @@
 local Logger = require('logger')
-local batches = {
-  netjoin = { },
-  netsplit = { }
-}
 local patterns = {
   JOIN = "\00308[\003%s\00308]\003 \00309>\003 %s",
   MODE = "\00308[\003%s\00308]\003 Mode %s by %s",
@@ -32,6 +28,12 @@ serve_self = function(self)
 end
 return {
   hooks = {
+    ['CONNECT'] = function(self)
+      self.batches = {
+        netjoin = { },
+        netsplit = { }
+      }
+    end,
     ['NETJOIN'] = function(self)
       local channels = { }
       local _list_0 = batches.netjoin

@@ -1,5 +1,4 @@
 cqueues = require 'cqueues'
-local last_connect
 {
 	handlers:
 		['001']: =>
