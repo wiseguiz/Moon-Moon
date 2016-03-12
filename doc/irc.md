@@ -2,7 +2,7 @@
 
 ## Functions
 
-###IRCConnection(server, port=6697, config={})
+###`IRCConnection(server, port=6697, config={})`
 
 **Description**
 
@@ -52,7 +52,7 @@ Does the same thing as add_hook, however, handlers are fired on specific IRC com
 
 **Returns**
 
- * nil
+ * _nil_
 
 ###`add_sender(id, sender)`
 
@@ -121,11 +121,11 @@ Sends a space delimited set of strings to the server with a newline at the end
 
 **Parameters**
 
- * *...*: A variable list of strings to send
+ * `...`: A variable list of strings to send
 
 **Returns**
 
- * nil
+ * _nil_
 
 ###`send(name, pattern, ...)`
 
@@ -137,7 +137,7 @@ Sends data using a custom sending function
 
  * *name*: Name of sender function to use
  * *pattern*: Pattern to use for formatting
- * *...*: Variable options for formatting
+ * `...`: Variable options for formatting
 
 **Returns**
 
@@ -155,7 +155,7 @@ Parses time from a `server-time`-compatible string
 
 **Returns**
 
- * Time since system Epoch
+ * (int) Time since system Epoch
 
 ###`parse_tags(tag_message)`
 
@@ -217,13 +217,12 @@ Runs handlers based off of the IRC received line
 
  * _nil_
 
- ###`loop()`
- 
- **Description**
- 
- Iterate through lines received from the server and process them
- 
- 
- **Returns**
- 
-  * _nil_
+###`loop()`
+
+**Description**
+
+Iterate through lines received from the server and process them
+
+**Returns**
+
+ * _nil_
