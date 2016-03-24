@@ -29,7 +29,7 @@ local caps = {
 }
 return {
   hooks = {
-    ['LS_CAP'] = function(self)
+    ['CONNECT'] = function(self)
       self.channels = serve_self({ })
       self.users = serve_self({ })
       self.server = {
@@ -40,6 +40,8 @@ return {
           garbage = garb_batch
         })
       }
+    end,
+    ['LS_CAP'] = function(self)
       for i = 1, #caps do
         self:fire_hook('REQ_CAP')
       end
