@@ -10,8 +10,7 @@ caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 
 {
 	hooks:
-		['LS_CAP']: =>
-			-- Welcome
+		['CONNECT']: =>
 			@channels = serve_self {}
 			@users    = serve_self {}
 			@server   =            {
@@ -19,6 +18,9 @@ caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 				ircv3_caps: serve_self {}
 				batches:    serve_self {gc: {}, garbage: garb_batch}
 			}
+		['LS_CAP']: =>
+			-- Welcome
+
 			for i=1, #caps
 				@fire_hook 'REQ_CAP'
 	handlers:

@@ -1,4 +1,3 @@
-local Logger = require('logger')
 local patterns = {
   JOIN = "\00308[\003%s\00308]\003 \00309>\003 %s",
   MODE = "\00308[\003%s\00308]\003 Mode %s by %s",
@@ -46,11 +45,11 @@ return {
         table.insert(channels[channel], prefix:match('^(.-)!') or prefix)
       end
       for channel, channel_user_list in pairs(channels) do
-        Logger.log(patterns.NETJOIN:format(channel, table.concat(channel_user_list, ', ')))
+        self:log(patterns.NETJOIN:format(channel, table.concat(channel_user_list, ', ')))
       end
     end,
     ['NETSPLIT'] = function(self)
-      return Logger.log(patterns.NETSPLIT:format(table.concat(batches.netsplit, ', ')))
+      return self:log(patterns.NETSPLIT:format(table.concat(batches.netsplit, ', ')))
     end
   },
   handlers = {
@@ -60,7 +59,7 @@ return {
       end
       local channel = args[1] or trail
       if not tags.batch then
-        return Logger.print(patterns.JOIN:format(channel, prefix:match('^(.-)!') or prefix))
+        return self:log(patterns.JOIN:format(channel, prefix:match('^(.-)!') or prefix))
       else
         local _list_0 = self.server.batches
         for _index_0 = 1, #_list_0 do
@@ -82,13 +81,13 @@ return {
     ['NICK'] = function(self, prefix, args, trail)
       local old = prefix:match('^(.-)!') or prefix
       local new = args[1] or trail
-      return Logger.print(('%s \00309>>\003 %s'):format(old, new))
+      return self:log(('%s \00309>>\003 %s'):format(old, new))
     end,
     ['MODE'] = function(self, prefix, args, trailing)
       local channel = args[1]
       table.remove(args, 1)
       if channel:sub(1, 1) == "#" then
-        return Logger.print(patterns.MODE:format(channel, table.concat(args, " "), prefix:match('^(.-)!') or prefix))
+        return self:log(patterns.MODE:format(channel, table.concat(args, " "), prefix:match('^(.-)!') or prefix))
       end
     end,
     ['KICK'] = function(self, prefix, args, trailing)
@@ -96,18 +95,18 @@ return {
       local nick = args[2]
       local kicker = prefix:match('^(.-)!') or prefix
       if trailing then
-        return Logger.print(patterns.KICK_2:format(channel, kicker, nick, trailing))
+        return self:log(patterns.KICK_2:format(channel, kicker, nick, trailing))
       else
-        return Logger.print(patterns.KICK:format(channel, kicker, nick))
+        return self:log(patterns.KICK:format(channel, kicker, nick))
       end
     end,
     ['PART'] = function(self, prefix, args, trailing)
       local channel = args[1]
       local nick = prefix:match('^(.-)!') or prefix
       if trailing then
-        return Logger.print(patterns.PART_2:format(channel, nick, trailing))
+        return self:log(patterns.PART_2:format(channel, nick, trailing))
       else
-        return Logger.print(patterns.PART:format(channel, nick))
+        return self:log(patterns.PART:format(channel, nick))
       end
     end,
     ['QUIT'] = function(self, prefix, args, trailing, tags)
@@ -129,9 +128,9 @@ return {
         end
       else
         if trailing then
-          return Logger.print(patterns.QUIT_2:format(nick, trailing))
+          return self:log(patterns.QUIT_2:format(nick, trailing))
         else
-          return Logger.print(patterns.QUIT:format(nick))
+          return self:log(patterns.QUIT:format(nick))
         end
       end
     end,
@@ -139,16 +138,16 @@ return {
       local nick = prefix:match('^(.-)!') or prefix
       if not args[1]:sub(1, 1) == '#' then
         if trailing:match("^\001ACTION .-\001$") then
-          return Logger.print(patterns.ACTION_2:format(nick, trailing:match('^%S+%s+(.+)')))
+          return self:log(patterns.ACTION_2:format(nick, trailing:match('^%S+%s+(.+)')))
         elseif not trailing:match('^\001') then
-          return Logger.print(patterns.PRIVMSG_2:format(nick, trailing))
+          return self:log(patterns.PRIVMSG_2:format(nick, trailing))
         end
       else
         local ch = args[1]
         if trailing:match("^\001ACTION .-\001$") then
-          return Logger.print(patterns.ACTION:format(ch, nick, trailing:match('^%S+%s+(.+)')))
+          return self:log(patterns.ACTION:format(ch, nick, trailing:match('^%S+%s+(.+)')))
         elseif not trailing:match('^\001') then
-          return Logger.print(patterns.PRIVMSG:format(ch, nick, trailing))
+          return self:log(patterns.PRIVMSG:format(ch, nick, trailing))
         end
       end
     end,
@@ -158,15 +157,15 @@ return {
       end
       local nick = prefix:match('^(.-)!') or prefix
       if args[1]:sub(1, 1) == '#' then
-        return Logger.print(patterns.NOTICE:format(args[1], nick, trailing))
+        return self:log(patterns.NOTICE:format(args[1], nick, trailing))
       else
-        return Logger.print(patterns.NOTICE_2:format(nick, trailing))
+        return self:log(patterns.NOTICE_2:format(nick, trailing))
       end
     end,
     ['INVITE'] = function(self, prefix, args, trailing)
       local nick = prefix:match('^(.-)!') or prefix
       local channel = args[2]
-      return Logger.print(patterns.INVITE:format(channel, nick, args[1]))
+      return self:log(patterns.INVITE:format(channel, nick, args[1]))
     end
   }
 }
