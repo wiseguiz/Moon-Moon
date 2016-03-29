@@ -128,7 +128,7 @@ do
       local real = self.config.realname
       local pass = self.config.password
       Logger.print(Logger.level.warn .. '--- Sending authentication data')
-      self:send_raw(('NICK %s'):format(nick))
+      self:nick(nick)
       if pass and ssl then
         Logger.debug('*** Sending password')
         self:send_raw(('PASS :%s'):format(pass))

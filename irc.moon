@@ -87,7 +87,7 @@ class IRCConnection extends IRCClient
 		real = @config.realname
 		pass = @config.password
 		Logger.print Logger.level.warn .. '--- Sending authentication data'
-		@send_raw ('NICK %s')\format nick
+		@nick nick
 		if pass and ssl
 			Logger.debug '*** Sending password'
 			@send_raw ('PASS :%s')\format pass
