@@ -57,6 +57,10 @@ class IRCConnection extends IRCClient
 		if modules.hooks
 			for id, hook in pairs modules.hooks
 				@add_hook id, hook
+	clear_modules: ()=>
+		@senders = {}
+		@handlers = {}
+		@hooks = {}
 
 	connect: ()=>
 		if @socket
@@ -210,5 +214,9 @@ class IRCConnection extends IRCClient
 		for received_line in @socket\lines! do
 			line = received_line
 			xpcall @process, print_error, @, received_line
+	log: (line)=>
+		Logger.print '\00311(\003' .. (@server.caps and
+			@server.caps['NETWORK'] or @config.server) ..
+			'\00311)\003 ' .. line
 
 return IRCConnection

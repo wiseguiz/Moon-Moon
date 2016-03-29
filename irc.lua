@@ -89,6 +89,11 @@ do
         end
       end
     end,
+    clear_modules = function(self)
+      self.senders = { }
+      self.handlers = { }
+      self.hooks = { }
+    end,
     connect = function(self)
       if self.socket then
         self.socket:shutdown()
@@ -280,6 +285,9 @@ do
         line = received_line
         xpcall(self.process, print_error, self, received_line)
       end
+    end,
+    log = function(self, line)
+      return Logger.print('\00311(\003' .. (self.server.caps and self.server.caps['NETWORK'] or self.config.server) .. '\00311)\003 ' .. line)
     end
   }
   _base_0.__index = _base_0

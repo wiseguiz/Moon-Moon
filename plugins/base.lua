@@ -1,5 +1,4 @@
 local cqueues = require('cqueues')
-local last_connect
 return {
   handlers = {
     ['001'] = function(self)

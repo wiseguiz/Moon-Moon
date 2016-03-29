@@ -3,14 +3,14 @@ garb_batch ==> setmetatable(@, {__gc: =>
 	for k, v in pairs @gc
 		pcall v
 })
+unpack = unpack or table.unpack
 
 caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 	'chghost', 'server-time', 'echo-message', 'invite-notify'}
 
 {
 	hooks:
-		['LS_CAP']: =>
-			-- Welcome
+		['CONNECT']: =>
 			@channels = serve_self {}
 			@users    = serve_self {}
 			@server   =            {
@@ -18,6 +18,9 @@ caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 				ircv3_caps: serve_self {}
 				batches:    serve_self {gc: {}, garbage: garb_batch}
 			}
+		['LS_CAP']: =>
+			-- Welcome
+
 			for i=1, #caps
 				@fire_hook 'REQ_CAP'
 	handlers:
@@ -99,7 +102,7 @@ caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 			@users[old] = nil
 		['MODE']: (prefix, args)=>
 			-- User or bot called /mode
-			if args[1]\sub(1,1) == "#"
+			if args[1] and args[1]\sub(1,1) == "#"
 				@send_raw ('NAMES %s')\format args[1]
 		['353']: (prefix, args, trail)=>
 			-- Result of NAMES

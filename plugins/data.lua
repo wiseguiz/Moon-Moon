@@ -16,6 +16,7 @@ garb_batch = function(self)
     end
   })
 end
+local unpack = unpack or table.unpack
 local caps = {
   'extended-join',
   'multi-prefix',
@@ -28,7 +29,7 @@ local caps = {
 }
 return {
   hooks = {
-    ['LS_CAP'] = function(self)
+    ['CONNECT'] = function(self)
       self.channels = serve_self({ })
       self.users = serve_self({ })
       self.server = {
@@ -39,6 +40,8 @@ return {
           garbage = garb_batch
         })
       }
+    end,
+    ['LS_CAP'] = function(self)
       for i = 1, #caps do
         self:fire_hook('REQ_CAP')
       end
@@ -150,7 +153,7 @@ return {
       self.users[old] = nil
     end,
     ['MODE'] = function(self, prefix, args)
-      if args[1]:sub(1, 1) == "#" then
+      if args[1] and args[1]:sub(1, 1) == "#" then
         return self:send_raw(('NAMES %s'):format(args[1]))
       end
     end,
