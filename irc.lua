@@ -6,9 +6,49 @@ local escapers = {
   ['n'] = '\n',
   [';'] = ';'
 }
+local IRCClient
+do
+  local _class_0
+  local _base_0 = {
+    msg = function(self, channel, message)
+      return self:sendf("PRIVMSG %s :%s", channel, message)
+    end,
+    part = function(self, channel, message)
+      if message == nil then
+        message = "Leaving"
+      end
+      return self:sendf("PART %s :%s", channel, message)
+    end,
+    join = function(self, channel)
+      return self:sendf("JOIN %s", message)
+    end,
+    quit = function(self, message)
+      return self:sendf("QUIT :%s", message)
+    end,
+    nick = function(self, new_nick)
+      return self:sendf("NICK %s", new_nick)
+    end
+  }
+  _base_0.__index = _base_0
+  _class_0 = setmetatable({
+    __init = function() end,
+    __base = _base_0,
+    __name = "IRCClient"
+  }, {
+    __index = _base_0,
+    __call = function(cls, ...)
+      local _self_0 = setmetatable({}, _base_0)
+      cls.__init(_self_0, ...)
+      return _self_0
+    end
+  })
+  _base_0.__class = _class_0
+  IRCClient = _class_0
+end
 local IRCConnection
 do
   local _class_0
+  local _parent_0 = IRCClient
   local _base_0 = {
     add_hook = function(self, id, hook)
       if not self.hooks[id] then
@@ -88,7 +128,7 @@ do
       local real = self.config.realname
       local pass = self.config.password
       Logger.print(Logger.level.warn .. '--- Sending authentication data')
-      self:send_raw(('NICK %s'):format(nick))
+      self:nick(nick)
       if pass and ssl then
         Logger.debug('*** Sending password')
         self:send_raw(('PASS :%s'):format(pass))
@@ -113,8 +153,8 @@ do
         ...
       }, ' '))
     end,
-    send = function(self, name, pattern, ...)
-      return self.senders[name](pattern:format(...))
+    sendf = function(self, fmtstr, ...)
+      return self:send_raw(fmtstr:format(...))
     end,
     date_pattern = "(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+).(%d+)Z",
     parse_time = function(self, datestring)
@@ -251,6 +291,7 @@ do
     end
   }
   _base_0.__index = _base_0
+  setmetatable(_base_0, _parent_0.__base)
   _class_0 = setmetatable({
     __init = function(self, server, port, config)
       if port == nil then
@@ -275,9 +316,20 @@ do
       self.hooks = { }
     end,
     __base = _base_0,
-    __name = "IRCConnection"
+    __name = "IRCConnection",
+    __parent = _parent_0
   }, {
-    __index = _base_0,
+    __index = function(cls, name)
+      local val = rawget(_base_0, name)
+      if val == nil then
+        local parent = rawget(cls, "__parent")
+        if parent then
+          return parent[name]
+        end
+      else
+        return val
+      end
+    end,
     __call = function(cls, ...)
       local _self_0 = setmetatable({}, _base_0)
       cls.__init(_self_0, ...)
@@ -285,6 +337,9 @@ do
     end
   })
   _base_0.__class = _class_0
+  if _parent_0.__inherited then
+    _parent_0.__inherited(_parent_0, _class_0)
+  end
   IRCConnection = _class_0
 end
 return IRCConnection

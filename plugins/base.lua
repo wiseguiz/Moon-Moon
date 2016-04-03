@@ -4,7 +4,7 @@ return {
     ['001'] = function(self)
       if self.config.autojoin then
         for channel in self.config.autojoin:gmatch("[^,]+") do
-          self:send_raw(("JOIN %s"):format(channel))
+          self:join(channel)
         end
       end
     end,
@@ -28,7 +28,8 @@ return {
       if self.data.nick_test >= 30 then
         return self:disconnect()
       else
-        return self:send_raw(('NICK %s[%d]'):format(self.config.nick, self.data.nick_test))
+        local nick = ("%s[%d]"):format(self.config.nick, self.data.nick_test)
+        return self:nick(nick)
       end
     end
   },

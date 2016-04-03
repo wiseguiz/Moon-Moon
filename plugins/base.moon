@@ -4,7 +4,7 @@ cqueues = require 'cqueues'
 		['001']: =>
 			if @config.autojoin
 				for channel in @config.autojoin\gmatch "[^,]+"
-					@send_raw ("JOIN %s")\format channel
+					@join channel
 		['PING']: (sender, args, last)=>
 			@send_raw ("PONG %s")\format last
 		['ERROR']: (message)=>
@@ -20,7 +20,8 @@ cqueues = require 'cqueues'
 			if @data.nick_test >= 30
 				@disconnect!
 			else
-				@send_raw ('NICK %s[%d]')\format @config.nick, @data.nick_test
+				nick = ("%s[%d]")\format @config.nick, @data.nick_test
+				@nick nick
 
 	hooks:
 		['CONNECT']: =>

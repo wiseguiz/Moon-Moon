@@ -3,7 +3,23 @@ Logger = require 'logger'
 
 escapers =  {['s']: ' ', ['r']: '\r', ['n']: '\n', [';']: ';'}
 
-class IRCConnection
+class IRCClient
+	msg: (channel, message)=>
+		@sendf "PRIVMSG %s :%s", channel, message
+	
+	part: (channel, message="Leaving")=>
+		@sendf "PART %s :%s", channel, message
+
+	join: (channel)=>
+		@sendf "JOIN %s", message
+	
+	quit: (message)=>
+		@sendf "QUIT :%s", message
+
+	nick: (new_nick)=>
+		@sendf "NICK %s", new_nick
+
+class IRCConnection extends IRCClient
 	new: (server, port=6697, config={})=>
 		assert(server)
 		@config = :server, :port, :config, ssl: port == 6697
@@ -71,7 +87,7 @@ class IRCConnection
 		real = @config.realname
 		pass = @config.password
 		Logger.print Logger.level.warn .. '--- Sending authentication data'
-		@send_raw ('NICK %s')\format nick
+		@nick nick
 		if pass and ssl
 			Logger.debug '*** Sending password'
 			@send_raw ('PASS :%s')\format pass
@@ -88,9 +104,9 @@ class IRCConnection
 	send_raw: (...)=>
 		@socket\write table.concat({...}, ' ') .. '\n'
 		Logger.debug '==> ' .. table.concat {...}, ' '
-
-	send: (name, pattern, ...)=>
-		@senders[name] pattern\format ...
+	
+	sendf: (fmtstr, ...)=>
+		@send_raw fmtstr\format ...
 
 	date_pattern: "(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+).(%d+)Z"
 
