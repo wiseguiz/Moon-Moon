@@ -8,23 +8,9 @@ wd = lfs.currentdir()
 Logger.set_debug true if os.getenv 'DEBUG'
 
 mods = {}
-watching = {
-	dirty: nil
-}
 load_modules = (folder)->
 	for file in lfs.dir folder
-		mod_date = lfs.attributes folder .. '/' .. file, 'modification'
 		if file\match "%.lua$"
-			if not watching[file] or watching[file] ~= mod_date
-				if not watching[file]
-					Logger.print 'Loading ' .. file
-				else
-					Logger.print 'Reloading ' .. file
-				watching.dirty = true
-				watching[file] = mod_date
-	if watching.dirty -- reload if dirty
-		for file in lfs.dir folder
-			if file\match "%.lua$"
 				func = assert loadfile folder .. '/' .. file
 				table.insert mods, func!
 
@@ -56,17 +42,6 @@ for file in lfs.dir 'configs'
 		table.insert(bots, bot)
 
 queue = cqueues.new!
-queue\wrap -> -- Run load_modules after reloading modules
-	while true
-		cqueues.sleep 5
-		pcall ->
-			load_modules_in_plugin_folders!
-			if watching.dirty
-				watching.dirty = false
-				for bot in *bots
-					bot\clear_modules!
-					for mod in *mods
-						bot\load_modules mod
 
 for bot in *bots
 	queue\wrap ->

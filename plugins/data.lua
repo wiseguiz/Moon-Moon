@@ -51,7 +51,13 @@ return {
       }
       for _index_0 = 1, #isupport_caps do
         local cap = isupport_caps[_index_0]
-        if cap:find("=") then
+        if cap:sub(1, 1) == "-" then
+          if cap:find("=") then
+            self.server.caps[cap:match("^%-(.+)=")] = nil
+          else
+            self.server.caps[cap:sub(2)] = nil
+          end
+        elseif cap:find("=") then
           local key, value = cap:match('^(.-)=(.+)')
           self.server.caps[key] = value
         else
