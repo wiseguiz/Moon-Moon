@@ -3,7 +3,10 @@ Logger = require 'logger'
 
 escapers =  {['s']: ' ', ['r']: '\r', ['n']: '\n', [';']: ';'}
 
-class IRCConnection
+class IRCClient
+	handlers: {}
+	senders:  {}
+	hooks:    {}
 	new: (server, port=6697, config={})=>
 		assert(server)
 		@config = :server, :port, :config, ssl: port == 6697
@@ -11,7 +14,7 @@ class IRCConnection
 			@config[k] = v
 
 		@handlers = {}
-		@senders  = {}
+		@senders  = setmetatable {}, __index: IRCClient.senders
 		@server   = {}
 		@hooks    = {}
 
@@ -167,17 +170,22 @@ class IRCConnection
 	fire_hook: (hook_name)=>
 		if not @hooks[hook_name]
 			return false
+		if IRCClient.hooks[hook_name] then
+			for _, hook in pairs IRCClient.hooks[hook_name]
+				Logger.debug Logger.level.warn .. '--- Running global hook: ' .. hook_name
+				ok, err = pcall hook, @
+				if not ok
+					Logger.print Logger.level.error .. '*** ' .. err
 		for _, hook in pairs @hooks[hook_name]
 			Logger.debug Logger.level.warn .. '--- Running hook: ' .. hook_name
 			ok, err = pcall hook, @
 			if not ok
 				Logger.print Logger.level.error .. '*** ' .. err
-		return true -- because it did fire off hooks
 
 	process: (line)=>
 		prefix, command, args, rest, tags = @parse line
 		Logger.debug Logger.level.warn .. '--- | Line: ' .. line
-		if not @handlers[command]
+		if not @handlers[command] or not IRCClient.handlers[command]
 			return
 		Logger.debug Logger.level.okay .. '--- |\\ Running trigger: ' .. Logger.level.warn .. command
 		if prefix
@@ -186,6 +194,10 @@ class IRCConnection
 			Logger.debug Logger.level.okay .. '--- |\\ Arguments: ' .. table.concat(args, ', ')
 		if rest
 			Logger.debug Logger.level.okay .. '--- |\\ Trailing: ' .. rest
+		for _, handler in pairs IRCClient.handlers[command]
+			ok, err = pcall handler, @, prefix, args, rest, tags
+			if not ok
+				Logger.print Logger.level.error .. '*** ' .. err
 		for _, handler in pairs @handlers[command]
 			ok, err = pcall handler, @, prefix, args, rest, tags
 			if not ok
@@ -205,4 +217,4 @@ class IRCConnection
 			@server.caps['NETWORK'] or @config.server) ..
 			'\00311)\003 ' .. line
 
-return IRCConnection
+return {:IRCClient}
