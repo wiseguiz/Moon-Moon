@@ -156,7 +156,6 @@ caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 				@users[nick] = nil -- User left network, garbagecollect
 		['QUIT']: (prefix, args)=>
 			-- User or bot parted network, nuke from lists
-			channel = args[1]
 			nick = prefix\match '^(.-)!'
 			for channel in pairs @users[nick].channels
 				@channels[channel].users[nick] = nil
