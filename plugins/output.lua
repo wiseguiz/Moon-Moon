@@ -35,7 +35,7 @@ return {
     end,
     ['NETJOIN'] = function(self)
       local channels = { }
-      local _list_0 = batches.netjoin
+      local _list_0 = self.batches.netjoin
       for _index_0 = 1, #_list_0 do
         local user = _list_0[_index_0]
         local channel, prefix = next(user)
@@ -49,7 +49,7 @@ return {
       end
     end,
     ['NETSPLIT'] = function(self)
-      return self:log(patterns.NETSPLIT:format(table.concat(batches.netsplit, ', ')))
+      return self:log(patterns.NETSPLIT:format(table.concat(self.batches.netsplit, ', ')))
     end
   },
   handlers = {
@@ -68,10 +68,10 @@ return {
             if #self.server.batches[name].gc > 0 then
               table.insert(self.server.batches[batch].gc, function()
                 self:fire_hook('NETJOIN')
-                batches.netjoin = { }
+                self.batches.netjoin = { }
               end)
             end
-            batches.netjoin[#batches.netjoin + 1] = {
+            self.batches.netjoin[#self.batches.netjoin + 1] = {
               [channel] = prefix
             }
           end
@@ -120,10 +120,10 @@ return {
             if #self.server.batches[name].gc > 0 then
               table.insert(self.server.batches[batch].gc, function()
                 self:fire_hook('NETSPLIT')
-                batches.netsplit = { }
+                self.batches.netsplit = { }
               end)
             end
-            batches.netsplit[#batches.netsplit + 1] = nick
+            self.batches.netsplit[#self.batches.netsplit + 1] = nick
           end
         end
       else

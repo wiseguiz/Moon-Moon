@@ -234,7 +234,6 @@ return {
       end
     end,
     ['QUIT'] = function(self, prefix, args)
-      local channel = args[1]
       local nick = prefix:match('^(.-)!')
       for channel in pairs(self.users[nick].channels) do
         self.channels[channel].users[nick] = nil
