@@ -31,7 +31,13 @@ caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 			-- Capabilities
 			isupport_caps = {select 2, unpack args}
 			for cap in *isupport_caps
-				if cap\find "="
+				if cap\sub(1, 1) == "-"
+					-- remove support
+					if cap\find "=" then
+						@server.caps[cap\match "^%-(.+)="] = nil
+					else
+						@server.caps[cap\sub 2] = nil
+				elseif cap\find "="
 					key, value = cap\match '^(.-)=(.+)'
 					@server.caps[key] = value
 				else
