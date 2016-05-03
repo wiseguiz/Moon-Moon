@@ -55,44 +55,34 @@ for file in lfs.dir 'configs'
 
 		table.insert(bots, bot)
 
-main = (queue = require 'queue')->
-	queue\wrap -> -- Run load_modules after reloading modules
-		while true
-			cqueues.sleep 5
-			pcall ->
-				load_modules_in_plugin_folders!
-				if watching.dirty
-					watching.dirty = false
-					for bot in *bots
-						bot\clear_modules!
-						for mod in *mods
-							bot\load_modules mod
+queue = cqueues.new!
+queue\wrap -> -- Run load_modules after reloading modules
+	while true
+		cqueues.sleep 5
+		pcall ->
+			load_modules_in_plugin_folders!
+			if watching.dirty
+				watching.dirty = false
+				for bot in *bots
+					bot\clear_modules!
+					for mod in *mods
+						bot\load_modules mod
 
-	for bot in *bots
-		queue\wrap ->
-			local success
-			for i=1, 3 do -- three tries
-				ok, err = pcall bot.connect, bot
-				success = ok
-				if not ok
-					Logger.print Logger.level.error .. '*** Unable to connect: ' .. bot.user_data.host
-					Logger.debug Logger.level.error .. '*** ' .. err
-				else
-					break
+for bot in *bots
+	queue\wrap ->
+		local success
+		for i=1, 3 do -- three tries
+			ok, err = pcall bot.connect, bot
+			success = ok
+			if not ok
+				Logger.print Logger.level.error .. '*** Unable to connect: ' .. bot.user_data.host
+				Logger.debug Logger.level.error .. '*** ' .. err
+			else
+				break
 
-			if not success
-				Logger.print Logger.level.fatal .. '*** Not connecting anymore for: ' .. bot.config_file
-				return
-			bot\loop!
+		if not success
+			Logger.print Logger.level.fatal .. '*** Not connecting anymore for: ' .. bot.config_file
+			return
+		bot\loop!
 
-success, fw = pcall require, 'astronomy'
-if not success then
-	queue = cqueues.new!
-	package.loaded['queue'] = queue
-	main!
-	while not queue\empty!
-		assert queue\step!
-
-else
-	package.loaded['queue'] = fw
-	fw\wrap main
+assert queue\loop!

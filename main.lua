@@ -71,61 +71,45 @@ for file in lfs.dir('configs') do
     table.insert(bots, bot)
   end
 end
-local main
-main = function(queue)
-  if queue == nil then
-    queue = require('queue')
-  end
-  queue:wrap(function()
-    while true do
-      cqueues.sleep(5)
-      pcall(function()
-        load_modules_in_plugin_folders()
-        if watching.dirty then
-          watching.dirty = false
-          for _index_0 = 1, #bots do
-            local bot = bots[_index_0]
-            bot:clear_modules()
-            for _index_1 = 1, #mods do
-              local mod = mods[_index_1]
-              bot:load_modules(mod)
-            end
+local queue = cqueues.new()
+queue:wrap(function()
+  while true do
+    cqueues.sleep(5)
+    pcall(function()
+      load_modules_in_plugin_folders()
+      if watching.dirty then
+        watching.dirty = false
+        for _index_0 = 1, #bots do
+          local bot = bots[_index_0]
+          bot:clear_modules()
+          for _index_1 = 1, #mods do
+            local mod = mods[_index_1]
+            bot:load_modules(mod)
           end
         end
-      end)
-    end
-  end)
-  for _index_0 = 1, #bots do
-    local bot = bots[_index_0]
-    queue:wrap(function()
-      local success
-      for i = 1, 3 do
-        local ok, err = pcall(bot.connect, bot)
-        success = ok
-        if not ok then
-          Logger.print(Logger.level.error .. '*** Unable to connect: ' .. bot.user_data.host)
-          Logger.debug(Logger.level.error .. '*** ' .. err)
-        else
-          break
-        end
       end
-      if not success then
-        Logger.print(Logger.level.fatal .. '*** Not connecting anymore for: ' .. bot.config_file)
-        return 
-      end
-      return bot:loop()
     end)
   end
+end)
+for _index_0 = 1, #bots do
+  local bot = bots[_index_0]
+  queue:wrap(function()
+    local success
+    for i = 1, 3 do
+      local ok, err = pcall(bot.connect, bot)
+      success = ok
+      if not ok then
+        Logger.print(Logger.level.error .. '*** Unable to connect: ' .. bot.user_data.host)
+        Logger.debug(Logger.level.error .. '*** ' .. err)
+      else
+        break
+      end
+    end
+    if not success then
+      Logger.print(Logger.level.fatal .. '*** Not connecting anymore for: ' .. bot.config_file)
+      return 
+    end
+    return bot:loop()
+  end)
 end
-local success, fw = pcall(require, 'astronomy')
-if not success then
-  local queue = cqueues.new()
-  package.loaded['queue'] = queue
-  main()
-  while not queue:empty() do
-    assert(queue:step())
-  end
-else
-  package.loaded['queue'] = fw
-  return fw:wrap(main)
-end
+return assert(queue:loop())

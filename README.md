@@ -13,10 +13,6 @@ the syntax used in the development version is called 'MoonScript' - this
 syntax can be compiled using Leafo's MoonScript program `moonc` and then
 loaded as Lua bytecode.
 
-The bot's core is based off of cqueues and is also compatible with the
-[Astronomy](https://github.com/ChickenNuggers/Astronomy) framework. The
-bot can also be run just by itself, however.
-
 ### Dependencies
 
 [LuaRocks](https://luarocks.org) (recommended)
