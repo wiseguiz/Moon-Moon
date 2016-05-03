@@ -18,40 +18,14 @@ patterns = {
 	NETSPLIT: "\00304<\003 (%s)"
 }
 
-serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
+serve_self =(new_table)-> setmetatable(new_table, {__call: ()=>pairs(@)})
 
 {
-	hooks:
-		['CONNECT']: =>
-			@batches = {
-				netjoin:  {}
-				netsplit: {}
-			}
-
-		['NETJOIN']: =>
-			channels = {}
-			for user in *@batches.netjoin
-				channel, prefix = next user
-				channels[channel] = {} if not channels[channel]
-				table.insert channels[channel], prefix\match('^(.-)!') or prefix
-			for channel, channel_user_list in pairs channels
-				@log patterns.NETJOIN\format channel, table.concat(channel_user_list, ', ')
-		['NETSPLIT']: =>
-			@log patterns.NETSPLIT\format table.concat(@batches.netsplit, ', ')
 	handlers:
 		['JOIN']: (prefix, args, trail, tags={})=>
 			-- user JOINs a channel
 			channel = args[1] or trail
-			if not tags.batch then
-				@log patterns.JOIN\format channel, prefix\match('^(.-)!') or prefix
-			else
-				for name, batch in *@server.batches
-					if name == tags.batch and batch[1] == 'netjoin'
-						if #@server.batches[name].gc > 0
-							table.insert @server.batches[batch].gc, ->
-								@fire_hook 'NETJOIN'
-								@batches.netjoin = {}
-						@batches.netjoin[#@batches.netjoin + 1] = {[channel]: prefix}
+			@log patterns.JOIN\format channel, prefix\match('^(.-)!') or prefix
 		['NICK']: (prefix, args, trail)=>
 			old = prefix\match('^(.-)!') or prefix
 			new = args[1] or trail
@@ -81,20 +55,10 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 		['QUIT']: (prefix, args, trailing, tags = {})=>
 			-- User or bot parted network, nuke from lists
 			nick = prefix\match('^(.-)!') or prefix
-			if tags.batch
-				for name, batch in pairs @server.batches
-					if name == tags.batch and tags.batch[1] == 'netsplit'
-						if #@server.batches[name].gc > 0
-							table.insert @server.batches[batch].gc, ->
-								@fire_hook 'NETSPLIT'
-								@batches.netsplit = {}
-						@batches.netsplit[#@batches.netsplit + 1] = nick
-				
+			if trailing
+				@log patterns.QUIT_2\format nick, trailing
 			else
-				if trailing
-					@log patterns.QUIT_2\format nick, trailing
-				else
-					@log patterns.QUIT\format nick
+				@log patterns.QUIT\format nick
 		['PRIVMSG']: (prefix, args, trailing)=>
 			nick = prefix\match('^(.-)!') or prefix
 			if not args[1]\sub(1, 1) == '#'

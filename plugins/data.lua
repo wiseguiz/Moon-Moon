@@ -1,18 +1,8 @@
 local serve_self
-serve_self = function(self)
-  return setmetatable(self, {
+serve_self = function(new_table)
+  return setmetatable(new_table, {
     __call = function(self)
       return pairs(self)
-    end
-  })
-end
-local garb_batch
-garb_batch = function(self)
-  return setmetatable(self, {
-    __gc = function(self)
-      for k, v in pairs(self.gc) do
-        pcall(v)
-      end
     end
   })
 end
@@ -35,10 +25,7 @@ return {
       self.server = {
         caps = serve_self({ }),
         ircv3_caps = serve_self({ }),
-        batches = serve_self({
-          gc = { },
-          garbage = garb_batch
-        })
+        batches = serve_self({ })
       }
     end,
     ['LS_CAP'] = function(self)

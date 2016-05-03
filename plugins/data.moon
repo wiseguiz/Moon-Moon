@@ -1,8 +1,4 @@
-serve_self ==> setmetatable(@, {__call: =>pairs(@)})
-garb_batch ==> setmetatable(@, {__gc: =>
-	for k, v in pairs @gc
-		pcall v
-})
+serve_self =(new_table)-> setmetatable(new_table, {__call: =>pairs(@)})
 unpack = unpack or table.unpack
 
 caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
@@ -16,8 +12,9 @@ caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 			@server   =            {
 				caps:       serve_self {}
 				ircv3_caps: serve_self {}
-				batches:    serve_self {gc: {}, garbage: garb_batch}
+				batches:    serve_self {}
 			}
+
 		['LS_CAP']: =>
 			-- Welcome
 
