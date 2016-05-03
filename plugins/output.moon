@@ -30,14 +30,14 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 
 		['NETJOIN']: =>
 			channels = {}
-			for user in *batches.netjoin
+			for user in *@batches.netjoin
 				channel, prefix = next user
 				channels[channel] = {} if not channels[channel]
 				table.insert channels[channel], prefix\match('^(.-)!') or prefix
 			for channel, channel_user_list in pairs channels
 				@log patterns.NETJOIN\format channel, table.concat(channel_user_list, ', ')
 		['NETSPLIT']: =>
-			@log patterns.NETSPLIT\format table.concat(batches.netsplit, ', ')
+			@log patterns.NETSPLIT\format table.concat(@batches.netsplit, ', ')
 	handlers:
 		['JOIN']: (prefix, args, trail, tags={})=>
 			-- user JOINs a channel
@@ -50,8 +50,8 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 						if #@server.batches[name].gc > 0
 							table.insert @server.batches[batch].gc, ->
 								@fire_hook 'NETJOIN'
-								batches.netjoin = {}
-						batches.netjoin[#batches.netjoin + 1] = {[channel]: prefix}
+								@batches.netjoin = {}
+						@batches.netjoin[#@batches.netjoin + 1] = {[channel]: prefix}
 		['NICK']: (prefix, args, trail)=>
 			old = prefix\match('^(.-)!') or prefix
 			new = args[1] or trail
@@ -87,8 +87,8 @@ serve_self ==> setmetatable(@, {__call: ()=>pairs(@)})
 						if #@server.batches[name].gc > 0
 							table.insert @server.batches[batch].gc, ->
 								@fire_hook 'NETSPLIT'
-								batches.netsplit = {}
-						batches.netsplit[#batches.netsplit + 1] = nick
+								@batches.netsplit = {}
+						@batches.netsplit[#@batches.netsplit + 1] = nick
 				
 			else
 				if trailing
