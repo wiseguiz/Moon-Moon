@@ -20,17 +20,17 @@ class IRCConnection
 			@hooks[id] = {hook}
 		else
 			table.insert @hooks[id], hook
-	
+
 	add_handler: (id, handler)=>
 		if not @handlers[id]
 			@handlers[id] = {handler}
 		else
 			table.insert @handlers[id], handler
-	
+
 	add_sender: (id, sender)=>
 		assert not @senders[id], "Sender already exists: " .. id
 		@senders[id] = sender
-	
+
 	load_modules: (modules)=>
 		if modules.senders
 			for id, sender in pairs modules.senders
@@ -41,6 +41,7 @@ class IRCConnection
 		if modules.hooks
 			for id, hook in pairs modules.hooks
 				@add_hook id, hook
+
 	clear_modules: ()=>
 		@senders = {}
 		@handlers = {}
@@ -189,7 +190,7 @@ class IRCConnection
 			ok, err = pcall handler, @, prefix, args, rest, tags
 			if not ok
 				Logger.print Logger.level.error .. '*** ' .. err
-	
+
 	loop: ()=>
 		local line
 		print_error =(err)->
@@ -198,6 +199,7 @@ class IRCConnection
 		for received_line in @socket\lines! do
 			line = received_line
 			xpcall @process, print_error, @, received_line
+
 	log: (line)=>
 		Logger.print '\00311(\003' .. (@server.caps and
 			@server.caps['NETWORK'] or @config.server) ..
