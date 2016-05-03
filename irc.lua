@@ -6,10 +6,13 @@ local escapers = {
   ['n'] = '\n',
   [';'] = ';'
 }
-local IRCConnection
+local IRCClient
 do
   local _class_0
   local _base_0 = {
+    handlers = { },
+    senders = { },
+    hooks = { },
     add_hook = function(self, id, hook)
       if not self.hooks[id] then
         self.hooks[id] = {
@@ -203,6 +206,15 @@ do
       if not self.hooks[hook_name] then
         return false
       end
+      if IRCClient.hooks[hook_name] then
+        for _, hook in pairs(IRCClient.hooks[hook_name]) do
+          Logger.debug(Logger.level.warn .. '--- Running global hook: ' .. hook_name)
+          local ok, err = pcall(hook, self)
+          if not ok then
+            Logger.print(Logger.level.error .. '*** ' .. err)
+          end
+        end
+      end
       for _, hook in pairs(self.hooks[hook_name]) do
         Logger.debug(Logger.level.warn .. '--- Running hook: ' .. hook_name)
         local ok, err = pcall(hook, self)
@@ -210,12 +222,11 @@ do
           Logger.print(Logger.level.error .. '*** ' .. err)
         end
       end
-      return true
     end,
     process = function(self, line)
       local prefix, command, args, rest, tags = self:parse(line)
       Logger.debug(Logger.level.warn .. '--- | Line: ' .. line)
-      if not self.handlers[command] then
+      if not self.handlers[command] or not IRCClient.handlers[command] then
         return 
       end
       Logger.debug(Logger.level.okay .. '--- |\\ Running trigger: ' .. Logger.level.warn .. command)
@@ -227,6 +238,12 @@ do
       end
       if rest then
         Logger.debug(Logger.level.okay .. '--- |\\ Trailing: ' .. rest)
+      end
+      for _, handler in pairs(IRCClient.handlers[command]) do
+        local ok, err = pcall(handler, self, prefix, args, rest, tags)
+        if not ok then
+          Logger.print(Logger.level.error .. '*** ' .. err)
+        end
       end
       for _, handler in pairs(self.handlers[command]) do
         local ok, err = pcall(handler, self, prefix, args, rest, tags)
@@ -270,12 +287,14 @@ do
         self.config[k] = v
       end
       self.handlers = { }
-      self.senders = { }
+      self.senders = setmetatable({ }, {
+        __index = IRCClient.senders
+      })
       self.server = { }
       self.hooks = { }
     end,
     __base = _base_0,
-    __name = "IRCConnection"
+    __name = "IRCClient"
   }, {
     __index = _base_0,
     __call = function(cls, ...)
@@ -285,6 +304,8 @@ do
     end
   })
   _base_0.__class = _class_0
-  IRCConnection = _class_0
+  IRCClient = _class_0
 end
-return IRCConnection
+return {
+  IRCClient = IRCClient
+}
