@@ -1,24 +1,22 @@
-local IRCConnection = require('irc')
 local Logger = require('logger')
 local cqueues = require('cqueues')
 local lfs = require('lfs')
+local IRCClient
+IRCClient = require('irc').IRCClient
 local wd = lfs.currentdir()
 if os.getenv('DEBUG') then
   Logger.set_debug(true)
 end
-local mods = { }
 local load_modules
 load_modules = function(folder)
   for file in lfs.dir(folder) do
     if file:match("%.lua$") then
-      local func = assert(loadfile(folder .. '/' .. file))
-      table.insert(mods, func())
+      dofile(folder .. '/' .. file)
     end
   end
 end
 local load_modules_in_plugin_folders
 load_modules_in_plugin_folders = function()
-  mods = { }
   local _list_0 = {
     'plugins',
     'modules'
@@ -42,11 +40,7 @@ for file in lfs.dir('configs') do
       local key, value = assert(line:match("^(.-)=(.+)$"))
       data[key] = value
     end
-    local bot = IRCConnection(data.host, data.port, data)
-    for _index_0 = 1, #mods do
-      local mod = mods[_index_0]
-      bot:load_modules(mod)
-    end
+    local bot = IRCClient(data.host, data.port, data)
     bot.user_data = data
     bot.config_file = file:match("(.+).ini$")
     table.insert(bots, bot)
