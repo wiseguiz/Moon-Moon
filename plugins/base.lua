@@ -9,7 +9,7 @@ IRCClient:add_handler('001', function(self)
   end
 end)
 IRCClient:add_handler('PING', function(self, sender, args, last)
-  return self:send_raw(("PONG %s"):format(last))
+  return self:send_raw(("PONG :%s"):format(last))
 end)
 IRCClient:add_handler('ERROR', function(self)
   local time = os.time()
@@ -19,7 +19,7 @@ IRCClient:add_handler('ERROR', function(self)
     return cqueues.sleep(self.data.last_connect + 30 - time)
   end
 end)
-IRCClient:add_handler('443', function(self)
+return IRCClient:add_handler('433', function(self)
   if not self.data.nick_test then
     self.data.nick_test = 0
   end
@@ -29,25 +29,5 @@ IRCClient:add_handler('443', function(self)
     return self:disconnect()
   else
     return self:send_raw(('NICK %s[%d]'):format(self.config.nick, self.data.nick_test))
-  end
-end)
-IRCClient:add_hook('CONNECT', function(self)
-  if not self.data then
-    self.data = { }
-  end
-  self.data.last_connect = os.time()
-  self.data.set_caps = 0
-  self:send_raw('CAP LS 302')
-  if not self:fire_hook('LS_CAP') then
-    return self:send_raw('CAP END')
-  end
-end)
-IRCClient:add_hook('REQ_CAP', function(self)
-  self.data.set_caps = self.data.set_caps + 1
-end)
-return IRCClient:add_hook('ACK_CAP', function(self)
-  self.data.set_caps = self.data.set_caps - 1
-  if self.data.set_caps == 0 then
-    return self:send_raw('CAP END')
   end
 end)

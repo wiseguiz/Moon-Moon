@@ -168,7 +168,7 @@ class IRCClient
 		return prefix, command, rest, trailing, tags
 
 	fire_hook: (hook_name)=>
-		if not @hooks[hook_name]
+		if not @hooks[hook_name] and not IRCClient.hooks[hook_name]
 			return false
 		if IRCClient.hooks[hook_name] then
 			for _, hook in pairs IRCClient.hooks[hook_name]
@@ -176,16 +176,19 @@ class IRCClient
 				ok, err = pcall hook, @
 				if not ok
 					Logger.print Logger.level.error .. '*** ' .. err
-		for _, hook in pairs @hooks[hook_name]
-			Logger.debug Logger.level.warn .. '--- Running hook: ' .. hook_name
-			ok, err = pcall hook, @
-			if not ok
-				Logger.print Logger.level.error .. '*** ' .. err
+		if @hooks[hook_name] then
+			for _, hook in pairs @hooks[hook_name]
+				Logger.debug Logger.level.warn .. '--- Running hook: ' .. hook_name
+				ok, err = pcall hook, @
+				if not ok
+					Logger.print Logger.level.error .. '*** ' .. err
+		return true
 
 	process: (line)=>
 		prefix, command, args, rest, tags = @parse line
 		Logger.debug Logger.level.warn .. '--- | Line: ' .. line
-		if not @handlers[command] or not IRCClient.handlers[command]
+		if not @handlers[command] and not IRCClient.handlers[command]
+			Logger.debug Logger.level.error .. "*** Handler not found for #{command}"
 			return
 		Logger.debug Logger.level.okay .. '--- |\\ Running trigger: ' .. Logger.level.warn .. command
 		if prefix
@@ -194,14 +197,16 @@ class IRCClient
 			Logger.debug Logger.level.okay .. '--- |\\ Arguments: ' .. table.concat(args, ', ')
 		if rest
 			Logger.debug Logger.level.okay .. '--- |\\ Trailing: ' .. rest
-		for _, handler in pairs IRCClient.handlers[command]
-			ok, err = pcall handler, @, prefix, args, rest, tags
-			if not ok
-				Logger.print Logger.level.error .. '*** ' .. err
-		for _, handler in pairs @handlers[command]
-			ok, err = pcall handler, @, prefix, args, rest, tags
-			if not ok
-				Logger.print Logger.level.error .. '*** ' .. err
+		if IRCClient.handlers[command]
+			for _, handler in pairs IRCClient.handlers[command]
+				ok, err = pcall handler, @, prefix, args, rest, tags
+				if not ok
+					Logger.print Logger.level.error .. '*** ' .. err
+		if @handlers[command]
+			for _, handler in pairs @handlers[command]
+				ok, err = pcall handler, @, prefix, args, rest, tags
+				if not ok
+					Logger.print Logger.level.error .. '*** ' .. err
 
 	loop: ()=>
 		local line

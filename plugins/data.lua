@@ -19,7 +19,7 @@ local caps = {
   'echo-message',
   'invite-notify'
 }
-IRCClient:add_handler('CONNECT', function(self)
+IRCClient:add_hook('CONNECT', function(self)
   self.channels = serve_self({ })
   self.users = serve_self({ })
   self.server = {
@@ -28,9 +28,21 @@ IRCClient:add_handler('CONNECT', function(self)
     batches = serve_self({ })
   }
 end)
-IRCClient:add_handler('LS_CAP', function(self)
+IRCClient:add_hook('ACK_CAP', function(self)
+  self.data.set_caps = self.data.set_caps - 1
+  if self.data.set_caps <= 0 then
+    return self:send_raw('CAP END')
+  end
+end)
+IRCClient:add_hook('CONNECT', function(self)
+  if not self.data then
+    self.data = { }
+  end
+  self.data.last_connect = os.time()
+  self.data.set_caps = 0
+  self:send_raw('CAP LS 302')
   for i = 1, #caps do
-    self:fire_hook('REQ_CAP')
+    self.data.set_caps = self.data.set_caps + 1
   end
 end)
 IRCClient:add_handler('BATCH', function(self, prefix, args, trail, tags)

@@ -203,7 +203,7 @@ do
       return prefix, command, rest, trailing, tags
     end,
     fire_hook = function(self, hook_name)
-      if not self.hooks[hook_name] then
+      if not self.hooks[hook_name] and not IRCClient.hooks[hook_name] then
         return false
       end
       if IRCClient.hooks[hook_name] then
@@ -215,18 +215,22 @@ do
           end
         end
       end
-      for _, hook in pairs(self.hooks[hook_name]) do
-        Logger.debug(Logger.level.warn .. '--- Running hook: ' .. hook_name)
-        local ok, err = pcall(hook, self)
-        if not ok then
-          Logger.print(Logger.level.error .. '*** ' .. err)
+      if self.hooks[hook_name] then
+        for _, hook in pairs(self.hooks[hook_name]) do
+          Logger.debug(Logger.level.warn .. '--- Running hook: ' .. hook_name)
+          local ok, err = pcall(hook, self)
+          if not ok then
+            Logger.print(Logger.level.error .. '*** ' .. err)
+          end
         end
       end
+      return true
     end,
     process = function(self, line)
       local prefix, command, args, rest, tags = self:parse(line)
       Logger.debug(Logger.level.warn .. '--- | Line: ' .. line)
-      if not self.handlers[command] or not IRCClient.handlers[command] then
+      if not self.handlers[command] and not IRCClient.handlers[command] then
+        Logger.debug(Logger.level.error .. "*** Handler not found for " .. tostring(command))
         return 
       end
       Logger.debug(Logger.level.okay .. '--- |\\ Running trigger: ' .. Logger.level.warn .. command)
@@ -239,16 +243,20 @@ do
       if rest then
         Logger.debug(Logger.level.okay .. '--- |\\ Trailing: ' .. rest)
       end
-      for _, handler in pairs(IRCClient.handlers[command]) do
-        local ok, err = pcall(handler, self, prefix, args, rest, tags)
-        if not ok then
-          Logger.print(Logger.level.error .. '*** ' .. err)
+      if IRCClient.handlers[command] then
+        for _, handler in pairs(IRCClient.handlers[command]) do
+          local ok, err = pcall(handler, self, prefix, args, rest, tags)
+          if not ok then
+            Logger.print(Logger.level.error .. '*** ' .. err)
+          end
         end
       end
-      for _, handler in pairs(self.handlers[command]) do
-        local ok, err = pcall(handler, self, prefix, args, rest, tags)
-        if not ok then
-          Logger.print(Logger.level.error .. '*** ' .. err)
+      if self.handlers[command] then
+        for _, handler in pairs(self.handlers[command]) do
+          local ok, err = pcall(handler, self, prefix, args, rest, tags)
+          if not ok then
+            Logger.print(Logger.level.error .. '*** ' .. err)
+          end
         end
       end
     end,
