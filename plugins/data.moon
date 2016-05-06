@@ -6,7 +6,7 @@ unpack = unpack or table.unpack
 caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 	'chghost', 'server-time', 'echo-message', 'invite-notify'}
 
-IRCClient\add_handler 'CONNECT', =>
+IRCClient\add_hook 'CONNECT', =>
 	@channels = serve_self {}
 	@users    = serve_self {}
 	@server   =            {
@@ -15,11 +15,19 @@ IRCClient\add_handler 'CONNECT', =>
 		batches:    serve_self {}
 	}
 
-IRCClient\add_handler 'LS_CAP', =>
-	-- Welcome
+IRCClient\add_hook 'ACK_CAP', =>
+	@data.set_caps -= 1
+	if @data.set_caps <= 0
+		@send_raw 'CAP END'
 
+IRCClient\add_hook 'CONNECT', =>
+	-- Welcome
+	@data = {} if not @data
+	@data.last_connect = os.time()
+	@data.set_caps = 0
+	@send_raw 'CAP LS 302'
 	for i=1, #caps
-		@fire_hook 'REQ_CAP'
+		@data.set_caps += 1
 
 IRCClient\add_handler 'BATCH', (prefix, args, trail, tags)=>
 	tag_type, tag = args[1]\match '(.)(.+)'

@@ -11,7 +11,7 @@ Logger.set_debug true if os.getenv 'DEBUG'
 load_modules = (folder)->
 	for file in lfs.dir folder
 		if file\match "%.lua$"
-				dofile folder .. '/' .. file
+			dofile folder .. '/' .. file
 
 load_modules_in_plugin_folders = ->
 	for module_folder in *{'plugins', 'modules'}
