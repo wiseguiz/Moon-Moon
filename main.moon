@@ -1,21 +1,19 @@
-IRCConnection = require 'irc' -- vim:set noet sts=0 sw=3 ts=3:
-Logger        = require 'logger'
+Logger        = require 'logger' -- vim:set noet sts=0 sw=3 ts=3:
 cqueues       = require 'cqueues'
 lfs           = require 'lfs'
+
+import IRCClient from require 'irc'
 
 wd = lfs.currentdir()
 
 Logger.set_debug true if os.getenv 'DEBUG'
 
-mods = {}
 load_modules = (folder)->
 	for file in lfs.dir folder
 		if file\match "%.lua$"
-				func = assert loadfile folder .. '/' .. file
-				table.insert mods, func!
+				dofile folder .. '/' .. file
 
 load_modules_in_plugin_folders = ->
-	mods = {}
 	for module_folder in *{'plugins', 'modules'}
 		full_path = wd .. '/' .. module_folder
 		load_modules full_path if lfs.attributes(full_path, 'mode') == 'directory'
@@ -31,10 +29,7 @@ for file in lfs.dir 'configs'
 		for line in io.lines('configs/' .. file)
 			key, value = assert line\match "^(.-)=(.+)$"
 			data[key] = value
-		bot  = IRCConnection data.host, data.port, data
-
-		for mod in *mods
-			bot\load_modules mod
+		bot  = IRCClient data.host, data.port, data
 
 		bot.user_data   = data
 		bot.config_file = file\match("(.+).ini$")
