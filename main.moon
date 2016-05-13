@@ -40,19 +40,20 @@ queue = cqueues.new!
 
 for bot in *bots
 	queue\wrap ->
-		local success
-		for i=1, 3 do -- three tries
-			ok, err = pcall bot.connect, bot
-			success = ok
-			if not ok
-				Logger.print Logger.level.error .. '*** Unable to connect: ' .. bot.user_data.host
-				Logger.debug Logger.level.error .. '*** ' .. err
-			else
-				break
+		while true
+			local success
+			for i=1, 3 do -- three tries
+				ok, err = pcall bot.connect, bot
+				success = ok
+				if not ok
+					Logger.print Logger.level.error .. '*** Unable to connect: ' .. bot.user_data.host
+					Logger.debug Logger.level.error .. '*** ' .. err
+				else
+					break
 
-		if not success
-			Logger.print Logger.level.fatal .. '*** Not connecting anymore for: ' .. bot.config_file
-			return
-		bot\loop!
+			if not success
+				Logger.print Logger.level.fatal .. '*** Not connecting anymore for: ' .. bot.config_file
+				return
+			pcall -> bot\loop!
 
 assert queue\loop!

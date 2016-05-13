@@ -50,22 +50,26 @@ local queue = cqueues.new()
 for _index_0 = 1, #bots do
   local bot = bots[_index_0]
   queue:wrap(function()
-    local success
-    for i = 1, 3 do
-      local ok, err = pcall(bot.connect, bot)
-      success = ok
-      if not ok then
-        Logger.print(Logger.level.error .. '*** Unable to connect: ' .. bot.user_data.host)
-        Logger.debug(Logger.level.error .. '*** ' .. err)
-      else
-        break
+    while true do
+      local success
+      for i = 1, 3 do
+        local ok, err = pcall(bot.connect, bot)
+        success = ok
+        if not ok then
+          Logger.print(Logger.level.error .. '*** Unable to connect: ' .. bot.user_data.host)
+          Logger.debug(Logger.level.error .. '*** ' .. err)
+        else
+          break
+        end
       end
+      if not success then
+        Logger.print(Logger.level.fatal .. '*** Not connecting anymore for: ' .. bot.config_file)
+        return 
+      end
+      pcall(function()
+        return bot:loop()
+      end)
     end
-    if not success then
-      Logger.print(Logger.level.fatal .. '*** Not connecting anymore for: ' .. bot.config_file)
-      return 
-    end
-    return bot:loop()
   end)
 end
 return assert(queue:loop())
