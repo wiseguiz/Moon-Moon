@@ -1,0 +1,27 @@
+<!DOCTYPE HTML5><!-- vim:set noet sts=0 sw=3 ts=3: -->
+<html><head>
+	<script src="/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+	<link rel="import" href="/elements/elements.html">
+	<link rel="icon" href="/icon.png">
+	<title>Moon Moon Interface</title>
+</head><body fullbleed vertical layout>
+	<paper-drawer-panel>
+		<paper-header-panel drawer>
+			<paper-toolbar>
+				<span class="menu-name">Menu</span>
+			</paper-toolbar>
+			<x-drawer-menu></x-drawer-menu>
+		</paper-header-panel>
+		<paper-header-panel main>
+			<paper-toolbar class="medium-tall">
+				<div class="spacer"></div>
+				<!--paper-icon-button icon="menu"></paper-icon-button-->
+				<div class="middle title" id="page-title">Moon Moon IRC Interface</div>
+				<paper-progress indeterminate class="middle fit"></paper-progress>
+			</paper-toolbar>
+		</paper-header-panel>
+	</paper-drawer-panel>
+	<!-- "Loaded" toast -->
+	<x-login-form id="login"></x-login-form>
+	<paper-toast onload="this.open()" text="Application loaded" opened></paper-toast>
+</body></html>

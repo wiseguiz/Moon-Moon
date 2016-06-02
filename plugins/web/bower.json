@@ -1,0 +1,18 @@
+{
+  "name": "web",
+  "authors": [
+    "Ryan Rion <ryan@hashbang.sh>"
+  ],
+  "description": "WebSocket and Polymer interface for Moon Moon IRC bot",
+  "main": "",
+  "moduleType": [],
+  "license": "MIT",
+  "homepage": "",
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.3.0",
+    "iron-elements": "PolymerElements/iron-elements#^1.0.8",
+    "neon-elements": "PolymerElements/neon-elements#^1.0.0",
+    "paper-elements": "PolymerElements/paper-elements#^1.0.7",
+    "platinum-elements": "PolymerElements/platinum-elements#^2.0.0"
+  }
+}
