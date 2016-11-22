@@ -117,11 +117,11 @@ do
       }, ' '))
     end,
     send = function(self, name, pattern, ...)
-      return self.senders[name](pattern:format(...))
+      return self:send_raw(self.senders[name](pattern:format(...)))
     end,
     date_pattern = "(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+).(%d+)Z",
-    parse_time = function(self, datestring)
-      local year, month, day, hour, min, sec, mil = datestring:match(self.date_pattern)
+    parse_time = function(self, date)
+      local year, month, day, hour, min, sec, mil = date:match(self.date_pattern)
       return os.time({
         year = year,
         month = month,
@@ -206,11 +206,17 @@ do
       if not self.hooks[hook_name] and not IRCClient.hooks[hook_name] then
         return false
       end
+      local has_errors = false
+      local errors = { }
       if IRCClient.hooks[hook_name] then
         for _, hook in pairs(IRCClient.hooks[hook_name]) do
           Logger.debug(Logger.level.warn .. '--- Running global hook: ' .. hook_name)
           local ok, err = pcall(hook, self)
           if not ok then
+            if not has_errors then
+              has_errors = true
+            end
+            table.append(errors, err)
             Logger.print(Logger.level.error .. '*** ' .. err)
           end
         end
@@ -220,11 +226,15 @@ do
           Logger.debug(Logger.level.warn .. '--- Running hook: ' .. hook_name)
           local ok, err = pcall(hook, self)
           if not ok then
+            if not has_errors then
+              has_errors = true
+            end
+            table.append(errors, err)
             Logger.print(Logger.level.error .. '*** ' .. err)
           end
         end
       end
-      return true
+      return has_errors, errors
     end,
     process = function(self, line)
       local prefix, command, args, rest, tags = self:parse(line)
