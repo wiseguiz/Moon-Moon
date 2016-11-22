@@ -1,3 +1,8 @@
+#!/usr/bin/env moon
+--- Create and manage IRC bots.
+-- @script main.moon
+-- @author Ryan "ChickenNuggers" <ryan@hashbang.sh>
+
 Logger        = require 'logger' -- vim:set noet sts=0 sw=3 ts=3:
 cqueues       = require 'cqueues'
 lfs           = require 'lfs'
@@ -5,7 +10,6 @@ lfs           = require 'lfs'
 import IRCClient from require 'irc'
 
 wd = lfs.currentdir()
-
 Logger.set_debug true if os.getenv 'DEBUG'
 
 load_modules = (folder)->
