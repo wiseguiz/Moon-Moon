@@ -33,21 +33,17 @@ find_command() {
 find_command moonc luac
 
 for file in $(find . -type f -name "*.moon"); do
+  (
 	luafile="${file%.*}.lua"
 	if [ ! -f "$luafile" ] || [ $(stat -c "%Y" "${file}" ) -gt $(stat -c "%Y" "$luafile") ] || $is_forcing; then
-		if ! $has_compiled; then
-			printf "\n"
-		fi
 		echo "Building $file"
 		if $is_binary; then
-			$CPP $file | moonc -- | luac -o $luafile -
+			moonc -p $file | luac -o $luafile -
 		else
-			$CPP $file | moonc -- > $luafile
+			moonc -o $luafile $file
 		fi
-		echo "Built $file"
 		has_compiled=true
 	fi
+  ) &
 done
-if $has_compiled; then
-	printf "\n"
-fi
+wait
