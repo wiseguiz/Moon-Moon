@@ -1,11 +1,5 @@
 ## General Information
 
-### Contributors
-
-| Name      | Email             | GitHub Account |
-| ----------|-------------------|--------------- |
-| Ryan Rion | ryan@hashbang.sh  | ChickenNuggers |
-
 ### Project Information
 
 Moon-Moon is an IRC bot run with the Lua programming language; however,
@@ -39,12 +33,6 @@ $ luarocks install cqueues
 $ luarocks install luafilesystem
 $ luarocks install moonscript # Optional
 ```
-
-### Installing [Modules](https://chickennuggers.github.io/Moon-Modules)
-
-Refer to the guide [here](https://chickennuggers.github.io/Moon-Modules)
-to install submodules; alternatively, just place modules in the `modules`
-folder.
 
 ## The Coroutine System
 
