@@ -2,13 +2,13 @@ has_compiled=false
 is_binary=false
 is_forcing=false
 for arg in $*; do
-	case $arg in
-		--bytecode|-b)
-			is_binary=true
-			;;
-		--force-compile|-f)
-			is_forcing=true
-			;;
+  case $arg in
+    --bytecode|-b)
+      is_binary=true
+      ;;
+    --force-compile|-f)
+      is_forcing=true
+      ;;
     --help|-h)
       echo "Usage: ./compile.sh [OPTIONS]"
       echo "Compile MoonScript files into Lua files - binary or source"
@@ -18,7 +18,7 @@ for arg in $*; do
       echo "  -h, --help            Display this message"
       exit 0
       ;;
-	esac
+  esac
 done
 
 find_command() {
@@ -34,16 +34,16 @@ find_command moonc luac
 
 for file in $(find . -type f -name "*.moon"); do
   (
-	luafile="${file%.*}.lua"
-	if [ ! -f "$luafile" ] || [ $(stat -c "%Y" "${file}" ) -gt $(stat -c "%Y" "$luafile") ] || $is_forcing; then
-		echo "Building $file"
-		if $is_binary; then
-			moonc -p $file | luac -o $luafile -
-		else
-			moonc -o $luafile $file
-		fi
-		has_compiled=true
-	fi
+  luafile="${file%.*}.lua"
+  if [ ! -f "$luafile" ] || [ $(stat -c "%Y" "${file}" ) -gt $(stat -c "%Y" "$luafile") ] || $is_forcing; then
+    echo "Building $file"
+    if $is_binary; then
+      moonc -p $file | luac -o $luafile -
+    else
+      moonc -o $luafile $file
+    fi
+    has_compiled=true
+  fi
   ) &
 done
 wait
