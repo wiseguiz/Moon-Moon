@@ -48,14 +48,17 @@ color_to_xterm = (line)->
 		else
 			return '\27[0;1m'
 	)\gsub('\002', ()->
+		is_bold = not is_bold
 		if is_bold
+			return '\27[1m'
+		else
 			if fg and bg
 				return ('\27[0;38;5;%s;48;5;%sm')\format colors[fg], colors[bg]
 			elseif fg
 				return ('\27[0;38;5;%sm')\format colors[fg]
-		else
-			return ('\27[1m')
-	).. '\27[1m'
+			else
+				return '\27[0m'
+	) .. '\27[0m'
 
 print = (line)->
 	local output_line

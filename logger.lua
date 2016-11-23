@@ -57,16 +57,19 @@ color_to_xterm = function(line)
       return '\27[0;1m'
     end
   end):gsub('\002', function()
+    is_bold = not is_bold
     if is_bold then
+      return '\27[1m'
+    else
       if fg and bg then
         return ('\27[0;38;5;%s;48;5;%sm'):format(colors[fg], colors[bg])
       elseif fg then
         return ('\27[0;38;5;%sm'):format(colors[fg])
+      else
+        return '\27[0m'
       end
-    else
-      return ('\27[1m')
     end
-  end) .. '\27[1m'
+  end) .. '\27[0m'
 end
 local print
 print = function(line)
