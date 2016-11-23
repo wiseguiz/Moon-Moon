@@ -248,10 +248,6 @@ do
     process = function(self, line)
       local prefix, command, args, rest, tags = self:parse(line)
       Logger.debug(Logger.level.warn .. '--- | Line: ' .. line)
-      if not self.handlers[command] and not IRCClient.handlers[command] then
-        Logger.debug(Logger.level.error .. "*** Handler not found for " .. tostring(command))
-        return 
-      end
       Logger.debug(Logger.level.okay .. '--- |\\ Running trigger: ' .. Logger.level.warn .. command)
       if prefix then
         Logger.debug(Logger.level.okay .. '--- |\\ Prefix: ' .. prefix)
@@ -261,6 +257,10 @@ do
       end
       if rest then
         Logger.debug(Logger.level.okay .. '--- |\\ Trailing: ' .. rest)
+      end
+      if not self.handlers[command] and not IRCClient.handlers[command] then
+        Logger.debug(Logger.level.error .. "*** Handler not found for " .. tostring(command))
+        return 
       end
       if IRCClient.handlers[command] then
         for _, handler in pairs(IRCClient.handlers[command]) do
@@ -287,7 +287,6 @@ do
       end
       for received_line in self.socket:lines() do
         line = received_line
-        Logger.debug("Received line: <line>")
         xpcall(self.process, print_error, self, received_line)
       end
     end,

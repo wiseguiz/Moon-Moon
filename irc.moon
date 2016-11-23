@@ -256,9 +256,6 @@ class IRCClient
 	process: (line)=>
 		prefix, command, args, rest, tags = @parse line
 		Logger.debug Logger.level.warn .. '--- | Line: ' .. line
-		if not @handlers[command] and not IRCClient.handlers[command]
-			Logger.debug Logger.level.error .. "*** Handler not found for #{command}"
-			return
 		Logger.debug Logger.level.okay .. '--- |\\ Running trigger: ' .. Logger.level.warn .. command
 		if prefix
 			Logger.debug Logger.level.okay .. '--- |\\ Prefix: ' .. prefix
@@ -266,6 +263,9 @@ class IRCClient
 			Logger.debug Logger.level.okay .. '--- |\\ Arguments: ' .. table.concat(args, ', ')
 		if rest
 			Logger.debug Logger.level.okay .. '--- |\\ Trailing: ' .. rest
+		if not @handlers[command] and not IRCClient.handlers[command]
+			Logger.debug Logger.level.error .. "*** Handler not found for #{command}"
+			return
 		if IRCClient.handlers[command]
 			for _, handler in pairs IRCClient.handlers[command]
 				ok, err = pcall handler, @, prefix, args, rest, tags
@@ -285,7 +285,6 @@ class IRCClient
 
 		for received_line in @socket\lines! do
 			line = received_line
-			Logger.debug "Received line: <line>"
 			xpcall @process, print_error, @, received_line
 
 	--- Log message from IRC server (used in plugins)
