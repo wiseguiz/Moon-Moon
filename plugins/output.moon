@@ -22,6 +22,9 @@ patterns = {
 
 serve_self = (new_table)-> setmetatable(new_table, {__call: ()=>pairs(@)})
 
+IRCClient\add_handler '372', (prefix, args, trail)=>
+	@log "\00305" .. trail
+
 IRCClient\add_handler 'JOIN', (prefix, args, trail, tags={})=>
 	-- user JOINs a channel
 	channel = args[1] or trail

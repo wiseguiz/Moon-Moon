@@ -27,6 +27,9 @@ serve_self = function(new_table)
     end
   })
 end
+IRCClient:add_handler('372', function(self, prefix, args, trail)
+  return self:log("\00305" .. trail)
+end)
 IRCClient:add_handler('JOIN', function(self, prefix, args, trail, tags)
   if tags == nil then
     tags = { }
