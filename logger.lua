@@ -23,7 +23,7 @@ local level = {
   warn = '\00308',
   okay = '\00303',
   fatal = '\00305',
-  debug = '\00306'
+  debug = '\00310'
 }
 local _debug, _color = false, true
 local set_debug
@@ -69,7 +69,7 @@ end
 local debug
 debug = function(line, default)
   if _debug then
-    return print(line)
+    return print(level.debug .. line)
   elseif default then
     return print(default)
   end

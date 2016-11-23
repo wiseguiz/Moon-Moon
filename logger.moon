@@ -18,12 +18,12 @@ colors = {
 	[15]: 7  -- light gray
 }
 level = {
-	error: '\00304',
-	reset: '\003',
-	warn:  '\00308',
-	okay:  '\00303',
-	fatal: '\00305',
-	debug: '\00306'
+	error: '\00304'
+	reset: '\003'
+	warn:  '\00308'
+	okay:  '\00303'
+	fatal: '\00305'
+	debug: '\00310'
 }
 _debug, _color = false, true
 
@@ -61,7 +61,7 @@ print = (line)->
 
 debug = (line, default)->
 	if _debug
-		print line
+		print level.debug .. line
 	elseif default
 		print default
 
