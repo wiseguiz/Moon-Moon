@@ -1,6 +1,6 @@
 import IRCClient from require 'irc'
 
-serve_self = (new_table)-> setmetatable(new_table, {__call: =>pairs(@)})
+serve_self = (new_table)-> setmetatable(new_table, {__call: => pairs(@)})
 unpack = unpack or table.unpack
 
 caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
