@@ -13,6 +13,13 @@ do
     handlers = { },
     senders = { },
     hooks = { },
+    commands = { },
+    default_config = {
+      prefix = "!"
+    },
+    add_command = function(self, name, command)
+      self.commands[name] = command
+    end,
     add_hook = function(self, id, hook)
       if not self.hooks[id] then
         self.hooks[id] = {
@@ -56,9 +63,11 @@ do
       self.senders = { }
       self.handlers = { }
       self.hooks = { }
+      self.commands = { }
     end,
     connect = function(self)
       if self.socket then
+        Logger.debug("Shutting down socket: " .. tostring(tostring(self.socket)))
         self.socket:shutdown()
       end
       local host = self.config.server
@@ -278,6 +287,7 @@ do
       end
       for received_line in self.socket:lines() do
         line = received_line
+        Logger.debug("Received line: <line>")
         xpcall(self.process, print_error, self, received_line)
       end
     end,
@@ -292,7 +302,7 @@ do
         port = 6697
       end
       if config == nil then
-        config = { }
+        config = self.default_config
       end
       assert(server)
       self.config = {
@@ -304,12 +314,15 @@ do
       for k, v in pairs(config) do
         self.config[k] = v
       end
+      self.commands = setmetatable({ }, {
+        __index = IRCClient.commands
+      })
+      self.hooks = { }
       self.handlers = { }
       self.senders = setmetatable({ }, {
         __index = IRCClient.senders
       })
       self.server = { }
-      self.hooks = { }
     end,
     __base = _base_0,
     __name = "IRCClient"

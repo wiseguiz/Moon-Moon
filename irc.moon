@@ -10,21 +10,33 @@ class IRCClient
 	handlers: {}
 	senders:  {}
 	hooks:    {}
+	commands: {}
+
+	default_config: {
+		prefix: "!"
+	}
 
 	--- Generate a new IRCClient
 	-- @tparam string server IRC server name
 	-- @tparam number port IRC port number
 	-- @tparam table config Default configuration
-	new: (server, port=6697, config={})=>
+	new: (server, port=6697, config=@default_config)=>
 		assert(server)
 		@config = :server, :port, :config, ssl: port == 6697
 		for k, v in pairs(config)
 			@config[k] = v
 
+		@commands = setmetatable {}, __index: IRCClient.commands
+		@hooks    = {}
 		@handlers = {}
 		@senders  = setmetatable {}, __index: IRCClient.senders
 		@server   = {}
-		@hooks    = {}
+
+	--- Add an IRC bot command
+	-- @tparam string name Bot command name
+	-- @tparam function command Function for handling command
+	add_command: (name, command)=>
+		@commands[name] = command
 
 	--- Add a client processing hook
 	-- @tparam string id Name of event to hook into
@@ -69,10 +81,12 @@ class IRCClient
 		@senders = {}
 		@handlers = {}
 		@hooks = {}
+		@commands = {}
 
 	--- Connect to the IRC server specified in the configuration
 	connect: ()=>
 		if @socket
+			Logger.debug "Shutting down socket: #{tostring(@socket)}"
 			@socket\shutdown!
 		host = @config.server
 		port = @config.port
@@ -271,6 +285,7 @@ class IRCClient
 
 		for received_line in @socket\lines! do
 			line = received_line
+			Logger.debug "Received line: <line>"
 			xpcall @process, print_error, @, received_line
 
 	--- Log message from IRC server (used in plugins)
