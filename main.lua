@@ -38,7 +38,13 @@ for file in lfs.dir('configs') do
     }
     for line in io.lines('configs/' .. file) do
       local key, value = assert(line:match("^(.-)%s+=%s+(.-)$"))
-      data[key] = value
+      if tonumber(value) then
+        data[key] = tonumber(value)
+      elseif value == "true" or value == "false" then
+        data[key] = value == true
+      else
+        data[key] = value
+      end
     end
     assert(data.server, "Missing `server` field: [" .. tostring(file) .. "]")
     if os.getenv('DEBUG') then

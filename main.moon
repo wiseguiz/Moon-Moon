@@ -32,7 +32,12 @@ for file in lfs.dir 'configs'
 		}
 		for line in io.lines('configs/' .. file)
 			key, value = assert line\match "^(.-)%s+=%s+(.-)$"
-			data[key] = value
+			if tonumber(value) then
+				data[key] = tonumber(value)
+			elseif value == "true" or value == "false"
+				data[key] = value == true
+			else
+				data[key] = value
 		assert data.server, "Missing `server` field: [#{file}]"
 		if os.getenv 'DEBUG'
 			for key, value in pairs data
