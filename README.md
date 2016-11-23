@@ -42,7 +42,7 @@ almost like having a threaded program, without threads. This offers some
 advantages:
 
  1. A single Lua state
- 2. No callbacks
+ 2. Fewer callbacks
  3. Cleaner code base
 
 Adding in a routine to the queue is simple, as demonstrated by the below
