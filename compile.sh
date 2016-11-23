@@ -23,7 +23,6 @@ done
 
 find_command() {
   while (( "$#" )); do
-    echo "Looking for... $1"
     which $1 >/dev/null 2>&1 || exit $?
     echo "Using $(which $1)"
     shift
@@ -36,7 +35,6 @@ for file in $(find . -type f -name "*.moon"); do
   (
   luafile="${file%.*}.lua"
   if [ ! -f "$luafile" ] || [ $(stat -c "%Y" "${file}" ) -gt $(stat -c "%Y" "$luafile") ] || $is_forcing; then
-    echo "Building $file"
     if $is_binary; then
       moonc -p $file | luac -o $luafile -
     else
@@ -47,3 +45,4 @@ for file in $(find . -type f -name "*.moon"); do
   ) &
 done
 wait
+ldoc . 2>&1 | grep -v 'module()'
