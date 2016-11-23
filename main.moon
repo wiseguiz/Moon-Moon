@@ -31,13 +31,18 @@ for file in lfs.dir 'configs'
 			dir: wd
 		}
 		for line in io.lines('configs/' .. file)
-			key, value = assert line\match "^(.-)=(.+)$"
+			key, value = assert line\match "^(.-)%s+=%s+(.-)$"
 			data[key] = value
-		bot  = IRCClient data.host, data.port, data
-
+		assert data.server, "Missing `server` field: [#{file}]"
+		if os.getenv 'DEBUG'
+			for key, value in pairs data
+				if type(value) == "string" then
+					print ("%q: %q")\format key, value
+				else
+					print ("%q: %s")\format key, value
+		bot  = IRCClient data.server, data.port, data
 		bot.user_data   = data
 		bot.config_file = file\match("(.+).ini$")
-
 		table.insert(bots, bot)
 
 queue = cqueues.new!
@@ -54,10 +59,12 @@ for bot in *bots
 					Logger.debug Logger.level.error .. '*** ' .. err
 				else
 					break
-
 			if not success
 				Logger.print Logger.level.fatal .. '*** Not connecting anymore for: ' .. bot.config_file
 				return
-			pcall -> bot\loop!
+
+			ok, err = pcall -> bot\loop!
+			if not ok then
+				Logger.print Logger.level.error .. err
 
 assert queue\loop!

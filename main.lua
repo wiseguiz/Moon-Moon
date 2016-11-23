@@ -37,10 +37,20 @@ for file in lfs.dir('configs') do
       dir = wd
     }
     for line in io.lines('configs/' .. file) do
-      local key, value = assert(line:match("^(.-)=(.+)$"))
+      local key, value = assert(line:match("^(.-)%s+=%s+(.-)$"))
       data[key] = value
     end
-    local bot = IRCClient(data.host, data.port, data)
+    assert(data.server, "Missing `server` field: [" .. tostring(file) .. "]")
+    if os.getenv('DEBUG') then
+      for key, value in pairs(data) do
+        if type(value) == "string" then
+          print(("%q: %q"):format(key, value))
+        else
+          print(("%q: %s"):format(key, value))
+        end
+      end
+    end
+    local bot = IRCClient(data.server, data.port, data)
     bot.user_data = data
     bot.config_file = file:match("(.+).ini$")
     table.insert(bots, bot)
@@ -66,9 +76,12 @@ for _index_0 = 1, #bots do
         Logger.print(Logger.level.fatal .. '*** Not connecting anymore for: ' .. bot.config_file)
         return 
       end
-      pcall(function()
+      local ok, err = pcall(function()
         return bot:loop()
       end)
+      if not ok then
+        Logger.print(Logger.level.error .. err)
+      end
     end
   end)
 end
