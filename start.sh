@@ -1,3 +1,7 @@
 ./compile.sh
 cat logo
-lua main.lua
+if command -v moon; then
+  moon main.moon
+else
+  lua main.lua
+fi
