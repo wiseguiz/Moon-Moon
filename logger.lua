@@ -1,5 +1,5 @@
 local _print = print
-local colors = {
+local colors = setmetatable({
   [0] = 15,
   [1] = 0,
   [2] = 4,
@@ -16,7 +16,11 @@ local colors = {
   [13] = 13,
   [14] = 8,
   [15] = 7
-}
+}, {
+  __index = function()
+    return 0
+  end
+})
 local level = {
   error = '\00304',
   reset = '\003',
@@ -36,19 +40,33 @@ set_color = function(value)
 end
 local color_to_xterm
 color_to_xterm = function(line)
+  local fg, bg
+  local is_bold = false
   return line:gsub('\003(%d%d?),(%d%d?)', function(fg, bg)
     fg, bg = tonumber(fg), tonumber(bg)
-    if colors[fg] and colors[bg] then
-      return '\27[38;5;' .. colors[fg] .. ';48;5;' .. colors[bg] .. 'm'
-    end
+    return '\27[38;5;' .. colors[fg] .. ';48;5;' .. colors[bg] .. 'm'
   end):gsub('\003(%d%d?)', function(fg)
     fg = tonumber(fg)
     if colors[fg] then
       return '\27[38;5;' .. colors[fg] .. 'm'
     end
-  end):gsub('[\003\015]', function()
-    return '\27[0m'
-  end) .. '\27[0m'
+  end):gsub('[\003\015]', function(char)
+    if char == '\015' or not is_bold then
+      return '\27[0m'
+    else
+      return '\27[0;1m'
+    end
+  end):gsub('\002', function()
+    if is_bold then
+      if fg and bg then
+        return ('\27[0;38;5;%s;48;5;%sm'):format(colors[fg], colors[bg])
+      elseif fg then
+        return ('\27[0;38;5;%sm'):format(colors[fg])
+      end
+    else
+      return ('\27[1m')
+    end
+  end) .. '\27[1m'
 end
 local print
 print = function(line)

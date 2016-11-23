@@ -1,5 +1,5 @@
 _print = print
-colors = {
+colors = setmetatable({
 	[0]:  15, -- white
 	[1]:  0,  -- black
 	[2]:  4,  -- blue
@@ -16,7 +16,7 @@ colors = {
 	[13]: 13, -- pink
 	[14]: 8,  -- gray
 	[15]: 7  -- light gray
-}
+}, __index: ()-> 0)
 level = {
 	error: '\00304'
 	reset: '\003'
@@ -33,17 +33,29 @@ set_color = (value)->
 	_color = not not value
 
 color_to_xterm = (line)->
+	local fg, bg
+	is_bold = false
 	return line\gsub('\003(%d%d?),(%d%d?)', (fg, bg)->
 		fg, bg = tonumber(fg), tonumber(bg)
-		if colors[fg] and colors[bg]
-			return '\27[38;5;' .. colors[fg] .. ';48;5;' .. colors[bg] .. 'm'
+		return '\27[38;5;' .. colors[fg] .. ';48;5;' .. colors[bg] .. 'm'
 	)\gsub('\003(%d%d?)', (fg)->
 		fg = tonumber(fg)
 		if colors[fg]
 			return '\27[38;5;' .. colors[fg] .. 'm'
-	)\gsub('[\003\015]', ()->
-		return '\27[0m'
-	).. '\27[0m'
+	)\gsub('[\003\015]', (char)->
+		if char == '\015' or not is_bold
+			return '\27[0m'
+		else
+			return '\27[0;1m'
+	)\gsub('\002', ()->
+		if is_bold
+			if fg and bg
+				return ('\27[0;38;5;%s;48;5;%sm')\format colors[fg], colors[bg]
+			elseif fg
+				return ('\27[0;38;5;%sm')\format colors[fg]
+		else
+			return ('\27[1m')
+	).. '\27[1m'
 
 print = (line)->
 	local output_line
