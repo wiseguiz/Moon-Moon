@@ -31,21 +31,19 @@ load_modules_in_plugin_folders = function()
 end
 load_modules_in_plugin_folders()
 local bots = { }
-for file in lfs.dir('configs') do
-  if file:match("%.ini$") then
-    local data = {
-      dir = wd
-    }
-    for line in io.lines('configs/' .. file) do
-      local key, value = assert(line:match("^(.-)%s+=%s+(.-)$"))
-      if tonumber(value) then
-        data[key] = tonumber(value)
-      elseif value == "true" or value == "false" then
-        data[key] = value == true
-      else
-        data[key] = value
+local conf_home = os.getenv('XDG_CONFIG_HOME') or os.getenv('HOME') .. '/.config'
+for file in lfs.dir(tostring(conf_home) .. "/moonmoon") do
+  if file:match("%.lua$") then
+    local data
+    (loadfile(tostring(conf_home) .. "/moonmoon/" .. tostring(file), nil, {
+      bot = function(name)
+        return function(file_data)
+          file_data.name = name
+          file_data.file = file
+          data = file_data
+        end
       end
-    end
+    }))()
     assert(data.server, "Missing `server` field: [" .. tostring(file) .. "]")
     if os.getenv('DEBUG') then
       for key, value in pairs(data) do
@@ -57,8 +55,6 @@ for file in lfs.dir('configs') do
       end
     end
     local bot = IRCClient(data.server, data.port, data)
-    bot.user_data = data
-    bot.config_file = file:match("(.+).ini$")
     table.insert(bots, bot)
   end
 end
