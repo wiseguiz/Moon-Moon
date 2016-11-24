@@ -34,6 +34,21 @@ $ luarocks install luafilesystem
 $ luarocks install moonscript # Optional
 ```
 
+### Configuration
+
+Lua is used as a configuration language; bots must each have their own separate
+`.lua` file in `$XDG_CONFIG_HOME/moonmoon` (which defaults to `$HOME/.config`).
+
+```lua
+bot "Esper" {
+	server = "irc.hashbang.sh";
+	port = 6697; -- TLS is automatically set if port == 6697
+	autojoin = {
+		"#!FusionScript";
+	};
+};
+```
+
 ## The Coroutine System
 
 Moon Moon takes advantage of a coroutine-based asynchronous system which
