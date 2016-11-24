@@ -35,11 +35,11 @@ set_color = (value)->
 color_to_xterm = (line)->
 	local fg, bg
 	is_bold = false
-	return line\gsub('\003(%d%d?),(%d%d?)', (fg, bg)->
-		fg, bg = tonumber(fg), tonumber(bg)
+	return line\gsub('\003(%d%d?),(%d%d?)', (tfg, tbg)->
+		fg, bg = tonumber(tfg), tonumber(tbg)
 		return '\27[38;5;' .. colors[fg] .. ';48;5;' .. colors[bg] .. 'm'
-	)\gsub('\003(%d%d?)', (fg)->
-		fg = tonumber(fg)
+	)\gsub('\003(%d%d?)', (tfg)->
+		fg = tonumber(tfg)
 		if colors[fg]
 			return '\27[38;5;' .. colors[fg] .. 'm'
 	)\gsub('[\003\015]', (char)->

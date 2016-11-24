@@ -42,11 +42,11 @@ local color_to_xterm
 color_to_xterm = function(line)
   local fg, bg
   local is_bold = false
-  return line:gsub('\003(%d%d?),(%d%d?)', function(fg, bg)
-    fg, bg = tonumber(fg), tonumber(bg)
+  return line:gsub('\003(%d%d?),(%d%d?)', function(tfg, tbg)
+    fg, bg = tonumber(tfg), tonumber(tbg)
     return '\27[38;5;' .. colors[fg] .. ';48;5;' .. colors[bg] .. 'm'
-  end):gsub('\003(%d%d?)', function(fg)
-    fg = tonumber(fg)
+  end):gsub('\003(%d%d?)', function(tfg)
+    fg = tonumber(tfg)
     if colors[fg] then
       return '\27[38;5;' .. colors[fg] .. 'm'
     end
