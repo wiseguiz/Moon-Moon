@@ -39,10 +39,12 @@ color_to_xterm = (line)->
 		fg, bg = tonumber(tfg), tonumber(tbg)
 		return '\27[38;5;' .. colors[fg] .. ';48;5;' .. colors[bg] .. 'm'
 	)\gsub('\003(%d%d?)', (tfg)->
+		bg = nil
 		fg = tonumber(tfg)
 		if colors[fg]
 			return '\27[38;5;' .. colors[fg] .. 'm'
 	)\gsub('[\003\015]', (char)->
+		fg, bg = nil, nil
 		if char == '\015' or not is_bold
 			return '\27[0m'
 		else

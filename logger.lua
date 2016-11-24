@@ -46,11 +46,13 @@ color_to_xterm = function(line)
     fg, bg = tonumber(tfg), tonumber(tbg)
     return '\27[38;5;' .. colors[fg] .. ';48;5;' .. colors[bg] .. 'm'
   end):gsub('\003(%d%d?)', function(tfg)
+    bg = nil
     fg = tonumber(tfg)
     if colors[fg] then
       return '\27[38;5;' .. colors[fg] .. 'm'
     end
   end):gsub('[\003\015]', function(char)
+    fg, bg = nil, nil
     if char == '\015' or not is_bold then
       return '\27[0m'
     else
