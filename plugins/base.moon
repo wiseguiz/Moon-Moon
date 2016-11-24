@@ -3,7 +3,7 @@ import IRCClient from require 'irc'
 
 IRCClient\add_handler '001', =>
 	if @config.autojoin
-		for channel in @config.autojoin\gmatch "[^,]+"
+		for channel in *@config.autojoin
 			@send_raw ("JOIN %s")\format channel
 
 IRCClient\add_handler 'PING', (sender, args, last)=>

@@ -3,7 +3,9 @@ local IRCClient
 IRCClient = require('irc').IRCClient
 IRCClient:add_handler('001', function(self)
   if self.config.autojoin then
-    for channel in self.config.autojoin:gmatch("[^,]+") do
+    local _list_0 = self.config.autojoin
+    for _index_0 = 1, #_list_0 do
+      local channel = _list_0[_index_0]
       self:send_raw(("JOIN %s"):format(channel))
     end
   end
