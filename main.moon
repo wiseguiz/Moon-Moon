@@ -48,6 +48,8 @@ for file in lfs.dir "#{conf_home}/moonmoon"
 
 queue = cqueues.new!
 
+package.loaded["queue"] = queue -- for use in modules
+
 for bot in *bots
 	queue\wrap ->
 		while true

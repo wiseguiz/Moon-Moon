@@ -59,6 +59,7 @@ for file in lfs.dir(tostring(conf_home) .. "/moonmoon") do
   end
 end
 local queue = cqueues.new()
+package.loaded["queue"] = queue
 for _index_0 = 1, #bots do
   local bot = bots[_index_0]
   queue:wrap(function()
