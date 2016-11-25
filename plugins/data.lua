@@ -1,13 +1,5 @@
 local IRCClient
 IRCClient = require('irc').IRCClient
-local serve_self
-serve_self = function(new_table)
-  return setmetatable(new_table, {
-    __call = function(self)
-      return pairs(self)
-    end
-  })
-end
 local unpack = unpack or table.unpack
 local caps = {
   'extended-join',
@@ -20,12 +12,12 @@ local caps = {
   'invite-notify'
 }
 IRCClient:add_hook('CONNECT', function(self)
-  self.channels = serve_self({ })
-  self.users = serve_self({ })
+  self.channels = { }
+  self.users = { }
   self.server = {
-    caps = serve_self({ }),
-    ircv3_caps = serve_self({ }),
-    batches = serve_self({ })
+    caps = { },
+    ircv3_caps = { },
+    batches = { }
   }
 end)
 IRCClient:add_hook('ACK_CAP', function(self)

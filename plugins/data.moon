@@ -1,18 +1,17 @@
 import IRCClient from require 'irc'
 
-serve_self = (new_table)-> setmetatable(new_table, {__call: => pairs(@)})
 unpack = unpack or table.unpack
 
 caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 	'chghost', 'server-time', 'echo-message', 'invite-notify'}
 
 IRCClient\add_hook 'CONNECT', =>
-	@channels = serve_self {}
-	@users    = serve_self {}
-	@server   =            {
-		caps:       serve_self {}
-		ircv3_caps: serve_self {}
-		batches:    serve_self {}
+	@channels = {}
+	@users    = {}
+	@server   = {
+		caps:       {}
+		ircv3_caps: {}
+		batches:    {}
 	}
 
 IRCClient\add_hook 'ACK_CAP', =>
