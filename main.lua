@@ -7,6 +7,9 @@ local wd = lfs.currentdir()
 if os.getenv('DEBUG') then
   Logger.set_debug(true)
 end
+pcall(function()
+  debug.traceback = require("StackTracePlus").stacktrace
+end)
 local load_modules
 load_modules = function(folder)
   for file in lfs.dir(folder) do
@@ -69,7 +72,7 @@ for _index_0 = 1, #bots do
         local ok, err = pcall(bot.connect, bot)
         success = ok
         if not ok then
-          Logger.print(Logger.level.error .. '*** Unable to connect: ' .. bot.user_data.host)
+          Logger.print(Logger.level.error .. '*** Unable to connect: ' .. bot.data.host)
           Logger.debug(Logger.level.error .. '*** ' .. err)
         else
           break

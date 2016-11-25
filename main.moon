@@ -12,6 +12,9 @@ import IRCClient from require 'irc'
 wd = lfs.currentdir()
 Logger.set_debug true if os.getenv 'DEBUG'
 
+pcall -> -- use StackTracePlus if available; it's much better than builtin
+	debug.traceback = require("StackTracePlus").stacktrace
+
 load_modules = (folder)->
 	for file in lfs.dir folder
 		if file\match "%.lua$"
@@ -58,7 +61,7 @@ for bot in *bots
 				ok, err = pcall bot.connect, bot
 				success = ok
 				if not ok
-					Logger.print Logger.level.error .. '*** Unable to connect: ' .. bot.user_data.host
+					Logger.print Logger.level.error .. '*** Unable to connect: ' .. bot.data.host
 					Logger.debug Logger.level.error .. '*** ' .. err
 				else
 					break
