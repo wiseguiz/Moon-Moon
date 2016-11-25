@@ -27,7 +27,7 @@ local level = {
   warn = '\00308',
   okay = '\00303',
   fatal = '\00305',
-  debug = '\00310'
+  debug = '\00311'
 }
 local _debug, _color = false, true
 local set_debug

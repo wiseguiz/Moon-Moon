@@ -1,4 +1,8 @@
+--- Logging utility module
+-- @module logger
 _print = print
+
+-- @table colors
 colors = setmetatable({
 	[0]:  15, -- white
 	[1]:  0,  -- black
@@ -15,23 +19,34 @@ colors = setmetatable({
 	[12]: 12, -- light blue
 	[13]: 13, -- pink
 	[14]: 8,  -- gray
-	[15]: 7  -- light gray
+	[15]: 7   -- light gray
 }, __index: ()-> 0)
+
+-- @table level
 level = {
-	error: '\00304'
-	reset: '\003'
-	warn:  '\00308'
-	okay:  '\00303'
-	fatal: '\00305'
-	debug: '\00310'
+	error: '\00304' -- Red
+	reset: '\003'   -- Reset
+	warn:  '\00308' -- Yellow
+	okay:  '\00303' -- Green
+	fatal: '\00305' -- Purple
+	debug: '\00311' -- Cyan
 }
 _debug, _color = false, true
 
+--- Enables printing out debug information for Logger.debug
+-- @tparam boolean value
+-- @see logger.debug
 set_debug = (value)->
 	_debug = not not value -- truthify it
+
+--- Enables printing out in colored mode
+-- @tparam boolean value
+-- @see logger.print
 set_color = (value)->
 	_color = not not value
 
+--- Translate IRC color format to xterm-compatible format
+-- @tparam string line
 color_to_xterm = (line)->
 	local fg, bg
 	is_bold = false
@@ -62,6 +77,8 @@ color_to_xterm = (line)->
 				return '\27[0m'
 	) .. '\27[0m'
 
+--- Change a line from IRC color to xterm color, and print the line
+-- @tparam string line
 print = (line)->
 	local output_line
 	if _color
@@ -76,6 +93,9 @@ print = (line)->
 	
 	_print output_line
 
+--- Print the `line` argument if debug is enabled, otherwise print `default`
+-- @tparam string line
+-- @tparam string default
 debug = (line, default)->
 	if _debug
 		print level.debug .. line
