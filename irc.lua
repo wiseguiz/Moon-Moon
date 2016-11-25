@@ -264,7 +264,9 @@ do
       end
       if IRCClient.handlers[command] then
         for _, handler in pairs(IRCClient.handlers[command]) do
-          local ok, err = pcall(handler, self, prefix, args, rest, tags)
+          local ok, err = xpcall(handler, (function()
+            return self:log_traceback()
+          end), self, prefix, args, rest, tags)
           if not ok then
             Logger.print(Logger.level.error .. '*** ' .. err)
           end
@@ -272,7 +274,9 @@ do
       end
       if self.handlers[command] then
         for _, handler in pairs(self.handlers[command]) do
-          local ok, err = pcall(handler, self, prefix, args, rest, tags)
+          local ok, err = xpcall(handler, (function()
+            return self:log_traceback()
+          end), self, prefix, args, rest, tags)
           if not ok then
             Logger.print(Logger.level.error .. '*** ' .. err)
           end
@@ -290,8 +294,14 @@ do
         xpcall(self.process, print_error, self, received_line)
       end
     end,
-    log = function(self, line)
-      return Logger.print('\00311(\003' .. (self.server.caps and self.server.caps['NETWORK'] or self.config.server) .. '\00311)\003 ' .. line)
+    log_traceback = function()
+      return self:log(debug.traceback())
+    end,
+    log = function(self, input)
+      local prefix = Logger.level[level]
+      for line in input:gmatch("[^\r\n]+") do
+        Logger.print('\00311(\003' .. (self.server.caps and self.server.caps['NETWORK'] or self.config.server) .. "\00311)\003 " .. tostring(line))
+      end
     end
   }
   _base_0.__index = _base_0
