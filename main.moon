@@ -39,7 +39,9 @@ for file in lfs.dir "#{conf_home}/moonmoon"
 					file_data.file = file
 					data = file_data
 		})()
-		assert data.server, "Missing `server` field: [#{file}]"
+		unless data and data.server
+			print "Missing `server` field: [#{file}]"
+			continue
 		if os.getenv 'DEBUG'
 			for key, value in pairs data
 				if type(value) == "string" then
@@ -61,12 +63,12 @@ for bot in *bots
 				ok, err = pcall bot.connect, bot
 				success = ok
 				if not ok
-					Logger.print Logger.level.error .. '*** Unable to connect: ' .. bot.data.host
+					Logger.print Logger.level.error .. '*** Unable to connect: ' .. bot.config.server
 					Logger.debug Logger.level.error .. '*** ' .. err
 				else
 					break
 			if not success
-				Logger.print Logger.level.fatal .. '*** Not connecting anymore for: ' .. bot.config_file
+				Logger.print Logger.level.fatal .. '*** Not connecting anymore for: ' .. bot.config.file
 				return
 
 			ok, err = pcall -> bot\loop!
