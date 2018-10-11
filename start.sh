@@ -1,4 +1,3 @@
-./compile.sh
 cat logo
 if command -v moon; then
   moon main.moon
