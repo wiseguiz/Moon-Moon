@@ -268,10 +268,11 @@ class IRCClient
 			return
 		if IRCClient.handlers[command]
 			for _, handler in pairs IRCClient.handlers[command]
-				ok, err = xpcall handler, (()-> @log_traceback!), @,
+				ok, err, tb = xpcall handler, self\log_traceback, self,
 					prefix, args, rest, tags
 				if not ok
-					Logger.print Logger.level.error .. '*** ' .. err
+					@log tb
+					@log Logger.level.error .. '*** ' .. err
 		if @handlers[command]
 			for _, handler in pairs @handlers[command]
 				ok, err = xpcall handler, (()-> @log_traceback!), @,
@@ -282,7 +283,7 @@ class IRCClient
 	--- Iterate over lines from a server and handle errors appropriately
 	loop: ()=>
 		local line
-		print_error =(err)->
+		print_error = (err)->
 			Logger.debug "Error: " .. err .. " (" .. line .. ")"
 
 		for received_line in @socket\lines! do
@@ -291,14 +292,15 @@ class IRCClient
 
 	--- Print a traceback using the internal logging mechanism
 	-- @see IRCClient\log
-	log_traceback: ()->
+	log_traceback: (err)=>
+		@log Logger.level.error .. '*** ' .. err
 		@log debug.traceback()
+		@log Logger.level.error .. '---'
 
 	--- Log message from IRC server (used in plugins)
 	-- @tparam string input Line to print, IRC color formatted
 	-- @see logger
 	log: (input)=>
-		prefix = Logger.level[level]
 		for line in input\gmatch "[^\r\n]+"
 			Logger.print '\00311(\003' .. (@server.caps and
 				@server.caps['NETWORK'] or @config.server) ..
