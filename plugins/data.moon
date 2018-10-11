@@ -165,7 +165,7 @@ IRCClient\add_handler 'KICK', (prefix, args)=>
 	channel = args[1]
 	nick = args[2]
 	@users[nick].channels[channel] = nil
-	if #@users[nick].channels == 0
+	if not next @users[nick].channels
 		@users[nick] = nil
 
 IRCClient\add_handler 'PART', (prefix, args)=>
@@ -173,7 +173,7 @@ IRCClient\add_handler 'PART', (prefix, args)=>
 	channel = args[1]
 	nick = prefix\match '^(.-)!'
 	@users[nick].channels[channel] = nil
-	if #@users[nick].channels == 0
+	if not next @users[nick].channels
 		@users[nick] = nil -- User left network, garbagecollect
 
 IRCClient\add_handler 'QUIT', (prefix, args)=>

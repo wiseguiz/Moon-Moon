@@ -50,9 +50,8 @@ IRCClient\add_handler 'NICK', (prefix, args, trail)=>
 IRCClient\add_handler 'MODE', (prefix, args, trailing)=>
 	-- User or bot called /mode
 	channel = args[1]
-	table.remove(args, 1)
 	if channel\sub(1,1) == "#"
-		@log patterns.MODE\format channel, table.concat(args, " "),
+		@log patterns.MODE\format channel, table.concat(args, " ", 2),
 			color(prefix\match('^(.-)!') or prefix)
 
 IRCClient\add_handler 'KICK', (prefix, args, trailing)=>
