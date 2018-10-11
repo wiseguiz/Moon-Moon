@@ -1,4 +1,4 @@
-has_compiled=false
+#!/bin/bash
 is_binary=false
 is_forcing=false
 for arg in $*; do
@@ -23,7 +23,7 @@ done
 
 find_command() {
   while (( "$#" )); do
-    which $1 >/dev/null 2>&1 || exit $?
+    which "$1" >/dev/null 2>&1 || exit $?
     echo "Using $(which $1)"
     shift
   done
@@ -34,13 +34,12 @@ find_command moonc luac
 for file in $(find . -type f -name "*.moon"); do
   (
   luafile="${file%.*}.lua"
-  if [ ! -f "$luafile" ] || [ $(stat -c "%Y" "${file}" ) -gt $(stat -c "%Y" "$luafile") ] || $is_forcing; then
+  if [ ! -f "$luafile" ] || [ $(stat -c "%Y" "${file}" ) -gt $(stat -c "%Y" "$luafile") ] || "$is_forcing"; then
     if $is_binary; then
-      moonc -p $file | luac -o $luafile -
+      moonc -p "$file" | luac -o "$luafile" -
     else
-      moonc -o $luafile $file
+      moonc -o "$luafile" "$file"
     fi
-    has_compiled=true
   fi
   ) &
 done
