@@ -24,3 +24,9 @@ IRCClient\add_handler '433', =>
 		@disconnect!
 	else
 		@send_raw ('NICK %s[%d]')\format @config.nick, @data.nick_test
+
+IRCClient\add_sender 'PRIVMSG', (channel, message)=>
+	for line in message\gmatch("[^\r\n]+")
+		@send_raw "PRIVMSG #{channel} :#{line}"
+		unless @server.ircv3_caps["echo-message"]
+			@process ":#{@config.nick}!local@localhost PRIVMSG #{channel} :(local) #{line}"
