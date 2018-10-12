@@ -90,7 +90,9 @@ IRCClient\add_handler 'PRIVMSG', (prefix, args, trailing)=>
 			@log patterns.PRIVMSG_2\format color(nick), trailing
 	else
 		ch = args[1]
-		prefix = @users[nick].channels[ch].status\sub(1, 1) or ""
+		prefix = ""
+		if @users[nick] and @users[nick].channels[ch]
+			prefix = @users[nick].channels[ch].status\sub(1, 1) or ""
 		if prefix != ""
 			prefix = color(prefix)
 		user = prefix .. color(nick)
@@ -103,7 +105,9 @@ IRCClient\add_handler 'NOTICE', (prefix, args, trailing)=>
 	return if trailing\sub(1, 1) == '\001' -- CTCP
 	nick = prefix\match('^(.-)!') or prefix
 	if args[1]\sub(1, 1) == '#'
-		prefix = @users[nick].channels[ch].status\sub(1, 1) or ""
+		prefix = ""
+		if @users[nick] and @users[nick].channels[ch]
+			prefix = @users[nick].channels[ch].status\sub(1, 1) or ""
 		if prefix != ""
 			prefix = color(prefix)
 		user = prefix .. color(nick)
