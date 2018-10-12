@@ -133,11 +133,10 @@ class IRCClient
 
 	--- Send a command using a builtin sender configured with @add_sender
 	-- @tparam string name Name of sender to use
-	-- @tparam string pattern Pattern to use for formatting
-	-- @param ... List of strings to use for formatted string
+	-- @param ... List of arguments to be passed to sender
 	-- @see IRCClient\add_sender
-	send: (name, pattern, ...)=>
-		@send_raw @senders[name] pattern\format ...
+	send: (name, ...)=>
+		@send_raw @senders[name] self, ...
 
 	date_pattern: "(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+).(%d+)Z"
 
