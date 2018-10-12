@@ -18,16 +18,15 @@ IRCClient\add_handler 'PRIVMSG', (prefix, args, message)=>
 
 	cmd_prefix = @config.prefix or "?>"
 	return unless message\sub(1, #cmd_prefix) == cmd_prefix
-	line = message\sub #cmd_prefix + 1
 
-	command = line\match "%S+"
+	command = message\match "%S+", #cmd_prefix + 1
 	command_args = {prefix, unpack(args)}
 	return @send "COMMAND_ERR", channel, "core", "Command not found: #{command}" unless @commands[command]
 
-	args = [arg for arg in line\gmatch "%S+"]
-	table.remove(args, 1)
+	args = [arg for arg in message\gmatch "%S+", (message\find("%s") or #message) + 1]
 	command_args[#command_args + 1] = table.concat(args, " ")
 	command_args[#command_args + 1] = arg for arg in *args
 	xpcall @commands[command], handle_error(self, channel, command), self, unpack(command_args)
 
-IRCClient\add_command "test", (_, channel)=> @send "COMMAND_OK", channel, "test", "Result"
+IRCClient\add_command "test", (_, channel)=>
+	@send "COMMAND_OK", channel, "test", "Result"
