@@ -75,4 +75,7 @@ for bot in *bots
 			if not ok then
 				Logger.print Logger.level.error .. err
 
-assert queue\loop!
+while not queue\empty!
+	ok, err = queue\loop!
+	if not ok
+		Logger.debug "#{Logger.level.error} *** #{err}"
