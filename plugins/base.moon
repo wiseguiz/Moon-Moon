@@ -1,8 +1,14 @@
 cqueues = require 'cqueues'
 import IRCClient from require 'irc'
 
-IRCClient\add_handler '001', =>
+unpack = unpack or table.unpack
+
+for tmp_cmd in *{'422', '376'}
+	IRCClient\add_handler tmp_cmd, => @fire_hook 'READY'
+
+IRCClient\add_hook 'READY', =>
 	if @config.autojoin
+		-- ::TODO:: properly
 		for channel in *@config.autojoin
 			@send_raw ("JOIN %s")\format channel
 
@@ -24,6 +30,11 @@ IRCClient\add_handler '433', =>
 		@disconnect!
 	else
 		@send_raw ('NICK %s[%d]')\format @config.nick, @data.nick_test
+
+IRCClient\add_handler '354', (prefix, args)=>
+	table.remove(args, 1)
+	query_type = table.remove(args, 1)
+	@fire_hook "WHOX_#{query_type}", unpack(args)
 
 IRCClient\add_sender 'PRIVMSG', (channel, message)=>
 	for line in message\gmatch("[^\r\n]+")
