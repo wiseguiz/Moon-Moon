@@ -1,4 +1,8 @@
 #!/bin/bash
+
+MOONC="${MOONC:-moonc}"
+LUAC="${LUAC:-luac}"
+
 is_binary=false
 is_forcing=false
 for arg in $*; do
@@ -29,16 +33,16 @@ find_command() {
   done
 }
 
-find_command moonc luac
+find_command $MOONC $LUAC
 
 for file in $(find . -type f -name "*.moon"); do
   (
   luafile="${file%.*}.lua"
   if [ ! -f "$luafile" ] || [ $(stat -c "%Y" "${file}" ) -gt $(stat -c "%Y" "$luafile") ] || "$is_forcing"; then
     if $is_binary; then
-      moonc -p "$file" | luac -o "$luafile" -
+      $MOONC -p "$file" | $LUAC -o "$luafile" -
     else
-      moonc -o "$luafile" "$file"
+      $MOONC -o "$luafile" "$file"
     fi
   fi
   ) &
