@@ -12,7 +12,7 @@ class IRCClient
 	hooks:    {}
 	commands: {}
 
-	default_config: {
+	default_config = {
 		prefix: "!"
 	}
 
@@ -20,11 +20,14 @@ class IRCClient
 	-- @tparam string server IRC server name
 	-- @tparam number port IRC port number
 	-- @tparam table config Default configuration
-	new: (server, port=6697, config=@default_config)=>
+	new: (server, port=6697, config)=>
 		assert(server)
 		@config = :server, :port, :config, ssl: port == 6697
-		for k, v in pairs(config)
+		for k, v in pairs(default_config)
 			@config[k] = v
+		if config
+			for k, v in pairs(config)
+				@config[k] = v
 
 		@commands = setmetatable {}, __index: IRCClient.commands
 		@hooks    = {}
@@ -32,36 +35,55 @@ class IRCClient
 		@senders  = setmetatable {}, __index: IRCClient.senders
 		@server   = {}
 
+	unpack = unpack or table.unpack
+
+	handle_options = (options, fn)->
+		unless fn
+			fn = options
+			options = {}
+
+		if options.async
+			return (...)->
+				args = {...}
+				require("queue")\wrap ->
+					fn(table.unpack(args))
+
+		fn
+
 	--- Add an IRC bot command
 	-- @tparam string name Bot command name
+	-- @tparam table options [Optional] async: bool, wraps in cqueues
 	-- @tparam function command Function for handling command
-	add_command: (name, command)=>
-		@commands[name] = command
+	add_command: (name, options, command)=>
+		@commands[name] = handle_options(options, command)
 
 	--- Add a client processing hook
-	-- @tparam string id Name of event to hook into
+	-- @tparam string name Name of event to hook into
+	-- @tparam table options [Optional] async: bool, wraps in cqueues
 	-- @tparam function hook Processor for hook event
-	add_hook: (id, hook)=>
-		if not @hooks[id]
-			@hooks[id] = {hook}
+	add_hook: (name, options, hook)=>
+		if not @hooks[name]
+			@hooks[name] = {handle_options(options, hook)}
 		else
-			table.insert @hooks[id], hook
+			table.insert @hooks[name], handle_options(options, hook)
 
 	--- Add an IRC command handler
 	-- @tparam string id IRC command ID (numerics MUST be strings)
+	-- @tparam table options [Optional] async: bool, wraps in cqueues
 	-- @tparam function handler IRC command processor
-	add_handler: (id, handler)=>
+	add_handler: (id, options, handler)=>
 		if not @handlers[id]
-			@handlers[id] = {handler}
+			@handlers[id] = {handle_options(options, handler)}
 		else
-			table.insert @handlers[id], handler
+			table.insert @handlers[id], handle_options(options, handler)
 
 	--- Add an IRC command sending handler
 	-- @tparam string id IRC command ID ("PRIVMSG", "JOIN", etc.)
+	-- @tparam table options [Optional] async: bool, wraps in cqueues
 	-- @tparam function sender Function to handle message to be sent
-	add_sender: (id, sender)=>
+	add_sender: (id, options, sender)=>
 		assert not @senders[id], "Sender already exists: " .. id
-		@senders[id] = sender
+		@senders[id] = handle_options(options, sender)
 
 	--- Append modules to the IRCClient based on a table
 	-- @tparam table modules Table with senders/handlers/hooks fields
@@ -227,7 +249,8 @@ class IRCClient
 	-- @tparam string hook_name Name of event to "fire"
 	-- @treturn boolean True if no errors were encountered, false otherwise
 	-- @treturn table Table containing list of errors from hooks
-	fire_hook: (hook_name)=>
+	fire_hook: (hook_name, ...)=>
+		Logger.debug "#{Logger.level.warn}--- Running hooks for #{hook_name}"
 		if not @hooks[hook_name] and not IRCClient.hooks[hook_name]
 			return false
 		has_errors = false
@@ -235,7 +258,7 @@ class IRCClient
 		if IRCClient.hooks[hook_name] then
 			for _, hook in pairs IRCClient.hooks[hook_name]
 				Logger.debug Logger.level.warn .. '--- Running global hook: ' .. hook_name
-				ok, err = pcall hook, @
+				ok, err = pcall hook, @, ...
 				if not ok
 					has_errors = true if not has_errors
 					table.append(errors, err)
@@ -243,7 +266,7 @@ class IRCClient
 		if @hooks[hook_name] then
 			for _, hook in pairs @hooks[hook_name]
 				Logger.debug Logger.level.warn .. '--- Running hook: ' .. hook_name
-				ok, err = pcall hook, @
+				ok, err = pcall hook, @, ...
 				if not ok
 					has_errors = true if not has_errors
 					table.append(errors, err)
