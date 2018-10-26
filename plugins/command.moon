@@ -1,5 +1,4 @@
 import IRCClient from require "irc"
-
 import sleep from require "cqueues"
 
 unpack = unpack or table.unpack
@@ -21,14 +20,15 @@ IRCClient\add_handler 'PRIVMSG', (prefix, args, message)=>
 	cmd_prefix = @config.prefix
 	return unless message\sub(1, #cmd_prefix) == cmd_prefix
 
-	command = message\match "%S+", #cmd_prefix + 1
+	cmd_name = message\match "%S+", #cmd_prefix + 1
 	command_args = {prefix, unpack(args)}
-	return @send "COMMAND_ERR", channel, "core", "Command not found: #{command}" unless @commands[command]
+	command = @commands\get cmd_name, multiple: false, index: IRCClient.commands
+	return @send "COMMAND_ERR", channel, "core", "Command not found: #{cmd_name}" unless command
 
 	args = [arg for arg in message\gmatch "%S+", (message\find("%s") or #message) + 1]
 	command_args[#command_args + 1] = table.concat(args, " ")
 	command_args[#command_args + 1] = arg for arg in *args
-	xpcall @commands[command], handle_error(self, channel, command), self, unpack(command_args)
+	xpcall command, handle_error(self, channel, cmd_name), self, unpack(command_args)
 
 IRCClient\add_command "test", async: true, (prefix, channel)=>
 	nick = prefix\match "^[^!]+"

@@ -18,7 +18,8 @@ pcall -> -- use StackTracePlus if available; it's much better than builtin
 load_modules = (folder)->
 	for file in lfs.dir folder
 		if file\match "%.lua$"
-			dofile folder .. '/' .. file
+			path = "#{folder}/#{file}"
+			IRCClient\with_context path, loadfile path
 
 load_modules_in_plugin_folders = ->
 	for module_folder in *{'plugins', 'modules'}

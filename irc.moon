@@ -6,11 +6,36 @@ Logger = require 'logger'
 
 escapers =  {['s']: ' ', ['r']: '\r', ['n']: '\n', [';']: ';'}
 
+local IRCClient, ContextTable
+
+class ContextTable
+	-- ::TODO:: allow for multiple *and* index
+	get: (name, opts = {})=>
+		:multiple, :index = opts
+		multiple = true if multiple == nil
+
+		local output
+		output = {} if multiple
+		for context, items in pairs(self)
+			-- context
+			unless multiple
+				-- return the singular if it exists
+				return items[name] if items[name] ~= nil
+			elseif items[name]
+				-- add all that exist
+				for element in *items[name]
+					table.insert output, element
+
+		if multiple
+			output
+		elseif index
+			index\get name, :multiple
+
 class IRCClient
-	handlers: {}
-	senders:  {}
-	hooks:    {}
-	commands: {}
+	commands: ContextTable!
+	hooks: ContextTable!
+	handlers: ContextTable!
+	senders: ContextTable!
 
 	default_config = {
 		prefix: "!"
@@ -29,10 +54,10 @@ class IRCClient
 			for k, v in pairs(config)
 				@config[k] = v
 
-		@commands = setmetatable {}, __index: IRCClient.commands
-		@hooks    = {}
-		@handlers = {}
-		@senders  = setmetatable {}, __index: IRCClient.senders
+		@commands = ContextTable!
+		@hooks    = ContextTable!
+		@handlers = ContextTable!
+		@senders  = ContextTable!
 		@server   = {}
 
 	unpack = unpack or table.unpack
@@ -50,53 +75,64 @@ class IRCClient
 
 		fn
 
+	assert_context = ()=> assert @context, "Missing context"
+
+	--- Change the module context for the current command
+	-- @tparam string context module context (typically, the name)
+	-- @tparam function fn code to run under context
+	with_context: (context, fn)=>
+		assert @context == nil, "Already in context: #{@context}"
+		@context = context
+
+		for key in *{"hooks", "handlers", "commands", "senders"}
+			self[key][context] = {}
+
+		fn self, context
+		@context = nil
+
 	--- Add an IRC bot command
 	-- @tparam string name Bot command name
 	-- @tparam table options [Optional] async: bool, wraps in cqueues
 	-- @tparam function command Function for handling command
 	add_command: (name, options, command)=>
-		@commands[name] = handle_options(options, command)
+		context = assert_context self
+		@commands[context][name] = handle_options(options, command)
 
 	--- Add a client processing hook
 	-- @tparam string name Name of event to hook into
 	-- @tparam table options [Optional] async: bool, wraps in cqueues
 	-- @tparam function hook Processor for hook event
 	add_hook: (name, options, hook)=>
-		if not @hooks[name]
-			@hooks[name] = {handle_options(options, hook)}
+		context = assert_context self
+
+		hooks = @hooks[context]
+
+		if not hooks[name]
+			hooks[name] = {handle_options(options, hook)}
 		else
-			table.insert @hooks[name], handle_options(options, hook)
+			table.insert hooks[name], handle_options(options, hook)
 
 	--- Add an IRC command handler
 	-- @tparam string id IRC command ID (numerics MUST be strings)
 	-- @tparam table options [Optional] async: bool, wraps in cqueues
 	-- @tparam function handler IRC command processor
 	add_handler: (id, options, handler)=>
-		if not @handlers[id]
-			@handlers[id] = {handle_options(options, handler)}
+		context = assert_context self
+
+		handlers = @handlers[context]
+
+		unless handlers[id]
+			handlers[id] = {handle_options(options, handler)}
 		else
-			table.insert @handlers[id], handle_options(options, handler)
+			table.insert handlers[id], handle_options(options, handler)
 
 	--- Add an IRC command sending handler
 	-- @tparam string id IRC command ID ("PRIVMSG", "JOIN", etc.)
 	-- @tparam table options [Optional] async: bool, wraps in cqueues
 	-- @tparam function sender Function to handle message to be sent
 	add_sender: (id, options, sender)=>
-		assert not @senders[id], "Sender already exists: " .. id
-		@senders[id] = handle_options(options, sender)
-
-	--- Append modules to the IRCClient based on a table
-	-- @tparam table modules Table with senders/handlers/hooks fields
-	load_modules: (modules)=>
-		if modules.senders
-			for id, sender in pairs modules.senders
-				@add_sender id, sender
-		if modules.handlers
-			for id, handler in pairs modules.handlers
-				@add_handler id, handler
-		if modules.hooks
-			for id, hook in pairs modules.hooks
-				@add_hook id, hook
+		context = assert_context self
+		@senders[context][id] = handle_options(options, sender)
 
 	--- Reset all modules in the IRCClient
 	clear_modules: ()=>
@@ -114,11 +150,11 @@ class IRCClient
 		port = @config.port
 		ssl  = @config.ssl
 		debug_msg = ('Connecting... {host: "%s", port: "%s"}')\format host, port
-		--
+
 		@config.nick = 'Moon-Moon' if not @config.nick
 		@config.username = 'Mooooon' if not @config.username
 		@config.realname = 'Moon Moon: MoonScript IRC Bot' if not @config.realname
-		--
+
 		Logger.debug debug_msg, Logger.level.warn .. '--- Connecting...'
 		@socket = assert socket.connect{:host, :port}
 		if ssl
@@ -158,7 +194,8 @@ class IRCClient
 	-- @param ... List of arguments to be passed to sender
 	-- @see IRCClient\add_sender
 	send: (name, ...)=>
-		@send_raw @senders[name] self, ...
+		sender = @senders\get name, multiple: false, index: IRCClient.senders
+		@send_raw sender(self, ...)
 
 	date_pattern: "(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+).(%d+)Z"
 
@@ -251,26 +288,29 @@ class IRCClient
 	-- @treturn table Table containing list of errors from hooks
 	fire_hook: (hook_name, ...)=>
 		Logger.debug "#{Logger.level.warn}--- Running hooks for #{hook_name}"
-		if not @hooks[hook_name] and not IRCClient.hooks[hook_name]
-			return false
+		has_run = false
 		has_errors = false
 		errors = {}
-		if IRCClient.hooks[hook_name] then
-			for _, hook in pairs IRCClient.hooks[hook_name]
-				Logger.debug Logger.level.warn .. '--- Running global hook: ' .. hook_name
-				ok, err = pcall hook, @, ...
-				if not ok
-					has_errors = true if not has_errors
-					table.append(errors, err)
-					Logger.print Logger.level.error .. '*** ' .. err
-		if @hooks[hook_name] then
-			for _, hook in pairs @hooks[hook_name]
-				Logger.debug Logger.level.warn .. '--- Running hook: ' .. hook_name
-				ok, err = pcall hook, @, ...
-				if not ok
-					has_errors = true if not has_errors
-					table.append(errors, err)
-					Logger.print Logger.level.error .. '*** ' .. err
+
+		for _, hook in pairs IRCClient.hooks\get hook_name
+			has_run = true unless has_run
+			Logger.debug Logger.level.warn .. '--- Running global hook: ' .. hook_name
+			ok, err = pcall hook, @, ...
+			if not ok
+				has_errors = true if not has_errors
+				table.append(errors, err)
+				Logger.print Logger.level.error .. '*** ' .. err
+		for _, hook in pairs @hooks\get hook_name
+			has_run = true unless has_run
+			Logger.debug Logger.level.warn .. '--- Running hook: ' .. hook_name
+			ok, err = pcall hook, @, ...
+			if not ok
+				has_errors = true if not has_errors
+				table.append(errors, err)
+				Logger.print Logger.level.error .. '*** ' .. err
+
+		Logger.debug Logger.level.error .. "*** Handler not found for #{command}" unless has_run
+
 		return has_errors, errors
 
 	--- Run handlers for an unparsed command
@@ -285,22 +325,25 @@ class IRCClient
 			Logger.debug Logger.level.okay .. '--- |\\ Arguments: ' .. table.concat(args, ', ')
 		if rest
 			Logger.debug Logger.level.okay .. '--- |\\ Trailing: ' .. rest
-		if not @handlers[command] and not IRCClient.handlers[command]
-			Logger.debug Logger.level.error .. "*** Handler not found for #{command}"
-			return
-		if IRCClient.handlers[command]
-			for _, handler in pairs IRCClient.handlers[command]
-				ok, err, tb = xpcall handler, self\log_traceback, self,
-					prefix, args, rest, tags
-				if not ok
-					@log tb
-					@log Logger.level.error .. '*** ' .. err
-		if @handlers[command]
-			for _, handler in pairs @handlers[command]
-				ok, err = xpcall handler, (()-> @log_traceback!), @,
-					prefix, args, rest, tags
-				if not ok
-					Logger.print Logger.level.error .. '*** ' .. err
+
+		has_run = false
+
+		for handler in *IRCClient.handlers\get command
+			has_run = true unless has_run
+			ok, err, tb = xpcall handler, self\log_traceback, self,
+				prefix, args, rest, tags
+			if not ok
+				@log tb
+				@log Logger.level.error .. '*** ' .. err
+
+		for handler in *@handlers\get command
+			has_run = true unless has_run
+			ok, err = xpcall handler, (()-> @log_traceback!), @,
+				prefix, args, rest, tags
+			if not ok
+				Logger.print Logger.level.error .. '*** ' .. err
+
+		Logger.debug Logger.level.error .. "*** Handler not found for #{command}" unless has_run
 
 	--- Iterate over lines from a server and handle errors appropriately
 	loop: ()=>
