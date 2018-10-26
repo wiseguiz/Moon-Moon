@@ -95,10 +95,15 @@ IRCClient\add_handler 'JOIN', (prefix, args, trail, tags={})=>
 				@users[nick].channels[channel] = status: ""
 		@users[nick].account = account if account
 	if not @channels[channel]
-		if @server.ircv3_caps['userhost-in-names']
-			@send_raw ('NAMES %s')\format channel
-		else
+		-- ::TODO:: optimize out for ISUPPORT WHOX
+		if not @server.ircv3_caps['userhost-in-names']
 			@send_raw ('WHO %s')\format channel
+		-- else
+		--	@send_raw ('NAMES %s')\format channel
+
+		if @server.caps['WHOX']
+			@send_raw "WHO #{channel} %nat,001"
+
 		@channels[channel] = {
 			users: {
 				[nick]: @users[nick]
@@ -106,6 +111,9 @@ IRCClient\add_handler 'JOIN', (prefix, args, trail, tags={})=>
 		}
 	else
 		@channels[channel].users[nick] = @users[nick]
+
+IRCClient\add_hook 'WHOX_001', (nick, account)=>
+	@users[nick].account = account if @users[nick] and account ~= '0'
 
 IRCClient\add_handler 'NICK', (prefix, args, trail)=>
 	old = prefix\match('^(.-)!') or prefix
