@@ -1,5 +1,7 @@
 import IRCClient from require "irc"
 
+import sleep from require "cqueues"
+
 unpack = unpack or table.unpack
 
 handle_error = (channel, command)=> (err)->
@@ -16,7 +18,7 @@ IRCClient\add_handler 'PRIVMSG', (prefix, args, message)=>
 	return unless prefix\match ".+!.+@.+"
 	channel = args[1]
 
-	cmd_prefix = @config.prefix or "?>"
+	cmd_prefix = @config.prefix
 	return unless message\sub(1, #cmd_prefix) == cmd_prefix
 
 	command = message\match "%S+", #cmd_prefix + 1
@@ -28,5 +30,12 @@ IRCClient\add_handler 'PRIVMSG', (prefix, args, message)=>
 	command_args[#command_args + 1] = arg for arg in *args
 	xpcall @commands[command], handle_error(self, channel, command), self, unpack(command_args)
 
-IRCClient\add_command "test", (_, channel)=>
-	@send "COMMAND_OK", channel, "test", "Result"
+IRCClient\add_command "test", async: true, (prefix, channel)=>
+	nick = prefix\match "^[^!]+"
+
+	sleep 5
+
+	if @users[nick] and @users[nick].account
+		@send "COMMAND_OK", channel, "test", "Account name: #{@users[nick].account}"
+	else
+		@send "COMMAND_ERR", channel, "test", "Account not found for: #{nick}"
