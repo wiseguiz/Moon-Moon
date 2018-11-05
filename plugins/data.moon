@@ -48,6 +48,14 @@ IRCClient\add_handler 'ACCOUNT', (prefix, args, trail)=>
 	nick = prefix\match '^(.-)!'
 	@users[nick].account = args[1] != "*" and args[1] or nil
 
+IRCClient\add_handler 'RENAME', (prefix, args, trail)=>
+	{old, new} = args
+	for _, user in pairs @channels[old].users
+		user.channels[new] = user.channels[old]
+		user.channels[old] = nil
+	@channels[new] = @channels[old]
+	@channels[old] = nil
+
 IRCClient\add_handler 'JOIN', (prefix, args, trail, tags={})=>
 	-- user JOINs a channel
 	local channel
@@ -120,6 +128,7 @@ IRCClient\add_handler 'MODE', (prefix, args)=>
 
 IRCClient\add_handler '353', (prefix, args, trail)=>
 	-- Result of NAMES
+	trail = trail or args[#args] -- Oragono bug workaround
 	channel = args[3]
 	statuses = @server.caps.PREFIX and @server.caps.PREFIX\match '%(.-%)(.+)' or "+@"
 	statuses = "[" .. statuses\gsub("%p", "%%%1") .. "]"
