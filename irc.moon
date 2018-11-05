@@ -71,7 +71,7 @@ class IRCClient
 			return (...)->
 				args = {...}
 				require("queue")\wrap ->
-					fn(table.unpack(args))
+					fn(unpack(args))
 
 		fn
 
