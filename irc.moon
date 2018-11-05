@@ -338,7 +338,7 @@ class IRCClient
 
 		for handler in *@handlers\get command
 			has_run = true unless has_run
-			ok, err = xpcall handler, (()-> @log_traceback!), @,
+			ok, err = xpcall handler, self\log_traceback, @,
 				prefix, args, rest, tags
 			if not ok
 				Logger.print Logger.level.error .. '*** ' .. err
