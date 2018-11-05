@@ -13,6 +13,8 @@ hash = (input)->
 color = (input)-> "\003#{colors[hash(input) % #colors + 1]}#{input}\003"
 
 patterns = {
+	RENAME: "%s \00309=>\003 %s \00314(\00315%s\00314)\003"
+	RENAME_2: "%s \00309=>\003 %s \00314(\00315%s\00314|\00315%s\00314)\003"
 	JOIN: "\00308[\003%s\00308]\003 \00309>\003 %s"
 	MODE: "\00308[\003%s\00308]\003 Mode %s by %s"
 	KICK: "\00308[\003%s\00308]\003 %s kicked %s"
@@ -36,6 +38,13 @@ serve_self = (new_table)-> setmetatable(new_table, {__call: ()=>pairs(@)})
 
 IRCClient\add_handler '372', (prefix, args, trail)=>
 	@log "\00305" .. trail
+
+IRCClient\add_handler 'RENAME', (prefix, args, trail)=>
+	nick = prefix\match("^[^!]+")
+	if trail == "" or trail == nil
+		@log patterns.RENAME\format args[1], args[2], nick
+	else
+		@log patterns.RENAME_2\format args[1], args[2], nick, trail
 
 IRCClient\add_handler 'JOIN', (prefix, args, trail, tags={})=>
 	-- user JOINs a channel
