@@ -11,7 +11,6 @@ handlers =
 			payload ..= "#{auth.username}\000#{auth.password}"
 			payload = "AUTHENTICATE #{to_base64 payload}"
 			prefix, command, args, trail = coroutine.yield payload
-			print command
 			assert command == "903" or command == "900", trail
 
 			-- destroy self on finish
