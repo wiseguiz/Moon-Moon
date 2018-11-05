@@ -2,9 +2,6 @@ import IRCClient from require 'irc'
 
 unpack = unpack or table.unpack
 
-caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
-	'chghost', 'server-time', 'echo-message', 'invite-notify'}
-
 IRCClient\add_hook 'CONNECT', =>
 	@channels = {}
 	@users    = {}
@@ -14,19 +11,11 @@ IRCClient\add_hook 'CONNECT', =>
 		batches:    {}
 	}
 
-IRCClient\add_hook 'ACK_CAP', =>
-	@data.set_caps -= 1
-	if @data.set_caps <= 0
-		@send_raw 'CAP END'
-
 IRCClient\add_hook 'CONNECT', =>
 	-- Welcome
 	@data = {} if not @data
 	@data.last_connect = os.time()
-	@data.set_caps = 0
 	@send_raw 'CAP LS 302'
-	for i=1, #caps
-		@data.set_caps += 1
 
 IRCClient\add_handler 'BATCH', (prefix, args, trail, tags)=>
 	tag_type, tag = args[1]\match '(.)(.+)'
@@ -190,34 +179,3 @@ IRCClient\add_handler 'QUIT', (prefix, args)=>
 	for channel in pairs @users[nick].channels
 		@channels[channel].users[nick] = nil
 	@users[nick] = nil
-
-IRCClient\add_handler 'CAP', (prefix, args, trailing)=>
-	to_process = {} if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NAK'
-	if args[2] == 'LS' or args[2] == 'ACK' or args[2] == 'NEW' or args[2] == 'DEL'
-		for item in trailing\gmatch '%S+'
-			for cap in *caps
-				if item == cap
-					to_process[#to_process + 1] = cap
-	if args[2] == 'LS'
-		if #to_process > 0
-			@send_raw ('CAP REQ :%s')\format table.concat(to_process, ' ')
-		for i=#to_process + 1, #caps
-			@fire_hook 'ACK_CAP'
-	elseif args[2] == 'NEW'
-		to_send = {}
-		for item in trailing\gmatch '%S+'
-			for cap in *caps
-				if item == cap
-					to_send[#to_send + 1] = item
-		@send_raw ('CAP REQ :%s')\format table.concat(to_send, ' ')
-	elseif args[2] == 'DEL'
-		for item in trailing\gmatch '%S+'
-			@ircv3_caps[item] = nil
-	elseif args[2] == 'ACK'
-		for cap in *to_process
-			key, value = cap\match '^(.-)=(.+)'
-			if value
-				@server.ircv3_caps[key] = value
-			else
-				@server.ircv3_caps[cap] = true
-			@fire_hook 'ACK_CAP'
