@@ -2,7 +2,7 @@ import IRCClient from require 'irc'
 
 caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 	    'chghost', 'server-time', 'echo-message', 'invite-notify'
-	    'draft/rename'}
+	    'draft/rename', 'sasl'}
 
 for cap in *caps
 	caps[cap] = true -- allow index-based lookup
@@ -33,7 +33,7 @@ IRCClient\add_handler 'CAP', (prefix, args, trailing)=>
 	if args[2] == 'LS'
 		if #to_process > 0
 			@send_raw ('CAP REQ :%s')\format table.concat(to_process, ' ')
-			@set_caps += 1
+			@set_caps += #to_process
 
 	-- Request new caps if supported
 	elseif args[2] == 'NEW'
@@ -53,10 +53,12 @@ IRCClient\add_handler 'CAP', (prefix, args, trailing)=>
 	elseif args[2] == 'ACK'
 		for cap in *to_process
 			key, value = cap\match '^(.-)=(.+)'
+			cap_name = key or cap
 			if value
 				@server.ircv3_caps[key] = value
 			else
 				@server.ircv3_caps[cap] = true
+			@fire_hook "CAP_ACK.#{cap_name}", value
 			@fire_hook 'CAP_ACK'
 
 	-- Run CAP_ACK hook for NAK'd caps
