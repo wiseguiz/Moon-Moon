@@ -298,7 +298,7 @@ class IRCClient
 			ok, err = pcall hook, @, ...
 			if not ok
 				has_errors = true if not has_errors
-				table.append(errors, err)
+				table.insert(errors, err)
 				Logger.print Logger.level.error .. '*** ' .. err
 		for _, hook in pairs @hooks\get hook_name
 			has_run = true unless has_run
@@ -306,7 +306,7 @@ class IRCClient
 			ok, err = pcall hook, @, ...
 			if not ok
 				has_errors = true if not has_errors
-				table.append(errors, err)
+				table.insert(errors, err)
 				Logger.print Logger.level.error .. '*** ' .. err
 
 		Logger.debug Logger.level.error .. "*** Handler not found for #{command}" unless has_run
