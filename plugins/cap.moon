@@ -27,12 +27,10 @@ IRCClient\add_handler 'CAP', (prefix, args, trailing)=>
 			if caps[item]
 				table.insert to_process, item
 
-	@log "Requesting: #{table.concat(to_process, ', ')}"
-
 	-- Request all supported
 	if args[2] == 'LS'
 		if #to_process > 0
-			@send_raw ('CAP REQ :%s')\format table.concat(to_process, ' ')
+			@send_raw "CAP REQ :#{table.concat to_process, ' '}"
 			@set_caps += #to_process
 
 	-- Request new caps if supported
