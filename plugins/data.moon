@@ -94,7 +94,7 @@ IRCClient\add_handler 'JOIN', (prefix, args, tags={})=>
 	if not @channels[channel]
 		if @server.caps['WHOX']
 			@send_raw "WHO #{channel} %nat,001"
-		else @server.ircv3_caps['userhost-in-names']
+		elseif @server.ircv3_caps['userhost-in-names']
 			@send_raw ('NAMES %s')\format channel
 		else
 			@send_raw ('WHO %s')\format channel
