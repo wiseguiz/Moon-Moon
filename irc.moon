@@ -1,6 +1,7 @@
 --- IRC client class
 -- @classmod IRCClient
 
+re = require "re"
 socket = require 'cqueues.socket'
 Logger = require 'logger'
 
@@ -40,6 +41,31 @@ class IRCClient
 	default_config = {
 		prefix: "!"
 	}
+
+	line_pattern = re.compile [[
+		-- tags, command, args
+		line <- {| (tags sp)? (prefix sp)? {:command: (command / numeric) :}
+			{:args: {| (sp arg)* |} :} |}
+		tags <- {:tags: '@' tag (';' tag)* :}
+		tag <- {| {:vendor: {[^/]+} '/' :}?
+			{:key: {[^=; ]+} -> esc_tag :}
+			{:value: ('=' [^; ]+) -> esc_tag :}?
+		|}
+		prefix <- ':' (
+			{:nick: {[^ !]+} :} '!'
+			{:user: {[^ @]+} :} '@'
+			{:host: {[^ ]+} :} /
+			{:nick: {[^ ]+} :})
+		command <- [A-Za-z]+
+		numeric <- %d^+3^-4 -- at most four digits, at least three
+		arg <- ':' {.+} / {%S+}
+		sp <- %s
+	]], esc_tag: (tag)-> tag\gsub "\\(.)", setmetatable({
+		[";"]: ":"
+		s: " "
+		r: "\r"
+		n: "\n"
+	}, __index: (t, k) -> k)
 
 	--- Generate a new IRCClient
 	-- @tparam string server IRC server name
@@ -206,81 +232,9 @@ class IRCClient
 		year, month, day, hour, min, sec, mil = date\match @date_pattern
 		return os.time(:year, :month, :day, :hour, :min, :sec) + tonumber(mil) / 1000
 
-	--- Grab tags from an IRCv3 message
-	-- @tparam string tag_message Message containing IRCv3 tags
-	-- @treturn table Table containing tags, client tags preceded with a "+"
-	parse_tags: (tag_message)=>
-		local cur_name
-		tags = {}
-		charbuf = {}
-		pos = 1
-		while pos < #tag_message do
-			if tag_message\match '^\\', pos
-				lookahead = tag_message\sub pos+1, pos+1
-				charbuf[#charbuf + 1] = escapers[lookahead] or lookahead
-				pos += 2
-			elseif cur_name
-				if tag_message\match "^;", pos
-					tags[cur_name] = table.concat charbuf
-					cur_name = nil
-					charbuf = {}
-					pos += 1
-				else
-					charbuf[#charbuf + 1], pos = tag_message\match "([^\\;]+)()", pos
-			else
-				if tag_message\match "^=", pos
-					if #charbuf > 0
-						cur_name = table.concat charbuf
-						charbuf = {}
-					pos += 1
-				elseif tag_message\match "^;", pos
-					if #charbuf > 0
-						tags[table.concat charbuf] = true
-						charbuf = {}
-					pos += 1
-				else
-					charbuf[#charbuf + 1], pos = tag_message\match "([^\\=;]+)()", pos
-		return tags
+	--- parse an IRC command using line_pattern
+	parse: (line)=> line_pattern\match line
 
-	--- Parse an IRCv3 compatible wire-format string
-	-- @tparam string message_with_tags IRCv3 compliant wire-format command
-	-- @treturn table User prefix, if sent by a user or server
-	-- @treturn string Command sent to client
-	-- @treturn table List of arguments, trailing argument not included
-	-- @treturn string Trailing possibly space-inclusive message
-	-- @treturn table IRCv3 compatible tag list
-	-- @see IRCClient\parse_tags
-	parse: (message_with_tags)=>
-		local message, tags
-		if message_with_tags\sub(1, 1) == '@'
-			tags = @parse_tags message_with_tags\sub 2, message_with_tags\find(' ') - 1
-			message = message_with_tags\sub((message_with_tags\find(' ') + 1))
-		else
-			message = message_with_tags
-		prefix_end = 0
-		prefix = nil
-		if message\sub(1, 1) == ':'
-			prefix_end = message\find ' '
-			prefix = message\sub 2, message\find(' ') - 1
-
-		trailing = nil
-		tstart = message\find ' :'
-		if tstart
-			trailing = message\sub tstart + 2
-		else
-			tstart = #message
-
-		rest = ((segment)->
-			t = {}
-			for word in segment\gmatch '%S+'
-				table.insert t, word
-
-			return t
-		)(message\sub prefix_end + 1, tstart)
-
-		command = rest[1]
-		table.remove(rest, 1)
-		return prefix, command, rest, trailing, tags
 
 	--- Activate hooks configured for the event name
 	-- @tparam string hook_name Name of event to "fire"
@@ -316,22 +270,29 @@ class IRCClient
 	--- Run handlers for an unparsed command
 	-- @tparam string line Incoming wire-string formatted line from IRC server
 	process: (line)=>
-		prefix, command, args, rest, tags = @parse line
+		{
+			:tags,
+			:nick,
+			:user,
+			:host,
+			:command,
+			:args = @parse line
+		)
 		Logger.debug Logger.level.warn .. '--- | Line: ' .. line
 		Logger.debug Logger.level.okay .. '--- |\\ Running trigger: ' .. Logger.level.warn .. command
-		if prefix
-			Logger.debug Logger.level.okay .. '--- |\\ Prefix: ' .. prefix
+		if nick and user and host
+			Logger.debug "#{Logger.level.okay} --- |\\ User: #{nick}!#{user}@#{host}"
+		elseif nick
+			Logger.debug "#{Logger.level.okay} --- |\\ Nick: #{nick}"
 		if #args > 0
-			Logger.debug Logger.level.okay .. '--- |\\ Arguments: ' .. table.concat(args, ', ')
-		if rest
-			Logger.debug Logger.level.okay .. '--- |\\ Trailing: ' .. rest
+			Logger.debug "#{Logger.level.okay} --- |\\ Arguments: #{table.concat args}"
 
 		has_run = false
 
 		for handler in *IRCClient.handlers\get command
 			has_run = true unless has_run
 			ok, err, tb = xpcall handler, self\log_traceback, self,
-				prefix, args, rest, tags
+				{:nick, :user, :host}, args, tags
 			if not ok
 				@log tb
 				@log Logger.level.error .. '*** ' .. err
