@@ -17,7 +17,8 @@ IRCClient\add_hook 'CONNECT', =>
 	@data.last_connect = os.time()
 	@send_raw 'CAP LS 302'
 
-IRCClient\add_handler 'BATCH', (prefix, args, trail, tags)=>
+IRCClient\add_handler 'BATCH', (prefix, args, tags)=>
+	-- ::TODO:: add in hook system for BATCH
 	tag_type, tag = args[1]\match '(.)(.+)'
 	if tag_type == '+'
 		@server.batches[tag] = {unpack(args, 2)}
@@ -40,15 +41,14 @@ IRCClient\add_handler '005', (prefix, args)=>
 		else
 			@server.caps[cap] = true
 
-IRCClient\add_handler 'AWAY', (prefix, args, trail)=>
-	nick = prefix\match '^(.-)!'
-	@users[nick].away = trail
+IRCClient\add_handler 'AWAY', (prefix, args)=>
+	{:nick} = prefix
+	@users[nick].away = args[#args]
 
-IRCClient\add_handler 'ACCOUNT', (prefix, args, trail)=>
-	nick = prefix\match '^(.-)!'
+IRCClient\add_handler 'ACCOUNT', (prefix, args)=>
 	@users[nick].account = args[1] != "*" and args[1] or nil
 
-IRCClient\add_handler 'RENAME', (prefix, args, trail)=>
+IRCClient\add_handler 'RENAME', (prefix, args)=>
 	{old, new} = args
 	for _, user in pairs @channels[old].users
 		user.channels[new] = user.channels[old]
@@ -56,7 +56,7 @@ IRCClient\add_handler 'RENAME', (prefix, args, trail)=>
 	@channels[new] = @channels[old]
 	@channels[old] = nil
 
-IRCClient\add_handler 'JOIN', (prefix, args, trail, tags={})=>
+IRCClient\add_handler 'JOIN', (prefix, args, tags={})=>
 	-- user JOINs a channel
 	local channel
 	local account
@@ -67,9 +67,9 @@ IRCClient\add_handler 'JOIN', (prefix, args, trail, tags={})=>
 		account = tags.account
 		channel = args[1]
 	else
-		channel = args[1] or trail
-	nick, username, host = prefix\match '^(.-)!(.-)@(.-)$'
-	if prefix\match '^.-!.-@.-$'
+		channel = args[1]
+	{:nick, :user, :host} = prefix
+	if host
 		if not @users[nick] then
 			@users[nick] = {
 				account: account
@@ -78,7 +78,7 @@ IRCClient\add_handler 'JOIN', (prefix, args, trail, tags={})=>
 						status: ""
 					}
 				},
-				:username,
+				:user,
 				:host
 			}
 		else
@@ -92,14 +92,12 @@ IRCClient\add_handler 'JOIN', (prefix, args, trail, tags={})=>
 				@users[nick].channels[channel] = status: ""
 		@users[nick].account = account if account
 	if not @channels[channel]
-		-- ::TODO:: optimize out for ISUPPORT WHOX
-		if not @server.ircv3_caps['userhost-in-names']
-			@send_raw ('WHO %s')\format channel
-		-- else
-		--	@send_raw ('NAMES %s')\format channel
-
 		if @server.caps['WHOX']
 			@send_raw "WHO #{channel} %nat,001"
+		else @server.ircv3_caps['userhost-in-names']
+			@send_raw ('NAMES %s')\format channel
+		else
+			@send_raw ('WHO %s')\format channel
 
 		@channels[channel] = {
 			users: {
@@ -112,9 +110,9 @@ IRCClient\add_handler 'JOIN', (prefix, args, trail, tags={})=>
 IRCClient\add_hook 'WHOX_001', (nick, account)=>
 	@users[nick].account = account if @users[nick] and account ~= '0'
 
-IRCClient\add_handler 'NICK', (prefix, args, trail)=>
-	old = prefix\match('^(.-)!') or prefix
-	new = args[1] or trail
+IRCClient\add_handler 'NICK', (prefix, args)=>
+	old = prefix.nick
+	new = args[1]
 	for channel_name in pairs @users[old].channels
 		@channels[channel_name].users[new] = @channels[channel_name].users[old]
 		@channels[channel_name].users[old] = nil
@@ -126,13 +124,12 @@ IRCClient\add_handler 'MODE', (prefix, args)=>
 	if args[1] and args[1]\sub(1,1) == "#"
 		@send_raw ('NAMES %s')\format args[1]
 
-IRCClient\add_handler '353', (prefix, args, trail)=>
+IRCClient\add_handler '353', (prefix, args)=>
 	-- Result of NAMES
-	trail = trail or args[#args] -- Oragono bug workaround
 	channel = args[3]
 	statuses = @server.caps.PREFIX and @server.caps.PREFIX\match '%(.-%)(.+)' or "+@"
 	statuses = "[" .. statuses\gsub("%p", "%%%1") .. "]"
-	for text in trail\gmatch '%S+'
+	for text in args[#args]\gmatch '%S+'
 		local status, pre, nick, user, host
 		if text\match statuses
 			status, pre = text\match ('^(%s+)(.+)')\format statuses
@@ -163,7 +160,7 @@ IRCClient\add_handler '352', (prefix, args)=>
 	@users[nick].away = away\sub(1, 1) == "G"
 
 IRCClient\add_handler 'CHGHOST', (prefix, args)=>
-	nick = prefix\match '^(.-)!'
+	{:nick} = prefix
 	@users[nick].user = args[1]
 	@users[nick].host = args[2]
 
@@ -177,14 +174,14 @@ IRCClient\add_handler 'KICK', (prefix, args)=>
 IRCClient\add_handler 'PART', (prefix, args)=>
 	-- User or bot parted channel, clear from lists
 	channel = args[1]
-	nick = prefix\match '^(.-)!'
+	{:nick} = prefix
 	@users[nick].channels[channel] = nil
 	if not next @users[nick].channels
 		@users[nick] = nil -- User left network, garbagecollect
 
 IRCClient\add_handler 'QUIT', (prefix, args)=>
 	-- User or bot parted network, nuke from lists
-	nick = prefix\match '^(.-)!'
+	{:nick} = prefix
 	for channel in pairs @users[nick].channels
 		@channels[channel].users[nick] = nil
 	@users[nick] = nil

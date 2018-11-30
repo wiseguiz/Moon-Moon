@@ -18,12 +18,12 @@ IRCClient\add_hook 'CAP_ACK', =>
 
 PROCESS_OPTS = {LS: true, ACK: true, NAK: true, DEL: true, NEW: true}
 
-IRCClient\add_handler 'CAP', (prefix, args, trailing)=>
+IRCClient\add_handler 'CAP', (prefix, args)=>
 	to_process = {} if PROCESS_OPTS[args[2]]
 
 	-- Take all trailing caps and put into list if supported
 	if PROCESS_OPTS[args[2]]
-		for item in trailing\gmatch '%S+'
+		for item in args[#args]\gmatch '%S+'
 			if caps[item]
 				table.insert to_process, item
 
@@ -35,16 +35,12 @@ IRCClient\add_handler 'CAP', (prefix, args, trailing)=>
 
 	-- Request new caps if supported
 	elseif args[2] == 'NEW'
-		to_send = {}
-		for item in trailing\gmatch '%S+'
-			for cap in *caps
-				if item == cap
-					to_send[#to_send + 1] = item
-		@send_raw ('CAP REQ :%s')\format table.concat(to_send, ' ')
+		@send_raw ('CAP REQ :%s')\format table.concat(to_process, ' ')
 
 	-- Delete cap, server no longer supports (SASL, etc. if services go down)
 	elseif args[2] == 'DEL'
-		for item in trailing\gmatch '%S+'
+		-- don't use to_process in case of custom added caps?
+		for item in args[#args]\gmatch '%S+'
 			@ircv3_caps[item] = nil
 
 	-- Run CAP_ACK hook for all succeeding caps

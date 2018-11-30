@@ -13,15 +13,14 @@ IRCClient\add_sender 'COMMAND_OK', (target, command_name, message)=>
 IRCClient\add_sender 'COMMAND_ERR', (target, command_name, message)=>
 	@send "PRIVMSG", target, "[\00304!#{command_name}\003] #{message}"
 
-IRCClient\add_handler 'PRIVMSG', (prefix, args, message)=>
-	return unless prefix\match ".+!.+@.+"
-	channel = args[1]
+IRCClient\add_handler 'PRIVMSG', (prefix, args)=>
+	{channel, message} = args
 
 	cmd_prefix = @config.prefix
 	return unless message\sub(1, #cmd_prefix) == cmd_prefix
 
 	cmd_name = message\match "%S+", #cmd_prefix + 1
-	command_args = {prefix, unpack(args)}
+	command_args = {prefix, channel}
 	command = @commands\get cmd_name, multiple: false, index: IRCClient.commands
 	return @send "COMMAND_ERR", channel, "core", "Command not found: #{cmd_name}" unless command
 

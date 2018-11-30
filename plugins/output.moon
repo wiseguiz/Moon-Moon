@@ -36,83 +36,83 @@ patterns = {
 
 serve_self = (new_table)-> setmetatable(new_table, {__call: ()=>pairs(@)})
 
-IRCClient\add_handler '372', (prefix, args, trail)=>
-	@log "\00305" .. trail
+IRCClient\add_handler '372', (prefix, args)=>
+	@log "\00305" .. args[#args]
 
-IRCClient\add_handler 'RENAME', (prefix, args, trail)=>
-	nick = prefix\match("^[^!]+")
-	if trail == "" or trail == nil
+IRCClient\add_handler 'RENAME', (prefix, args)=>
+	{:nick} = prefix
+	unless args[3] and args[3] != ""
 		@log patterns.RENAME\format args[1], args[2], nick
 	else
-		@log patterns.RENAME_2\format args[1], args[2], nick, trail
+		@log patterns.RENAME_2\format args[1], args[2], nick, args[3]
 
-IRCClient\add_handler 'JOIN', (prefix, args, trail, tags={})=>
+IRCClient\add_handler 'JOIN', (prefix, args, tags={})=>
 	-- user JOINs a channel
-	channel = args[1] or trail
-	@log patterns.JOIN\format channel, color(prefix\match('^(.-)!') or prefix)
+	channel = args[1]
+	@log patterns.JOIN\format channel, color(prefix.nick)
 
-IRCClient\add_handler 'NICK', (prefix, args, trail)=>
-	old = color(prefix\match('^(.-)!') or prefix)
-	new = color(args[1] or trail)
+IRCClient\add_handler 'NICK', (prefix, args)=>
+	old = color(prefix.nick)
+	new = color(args[1])
 	@log ('%s \00309>>\003 %s')\format old, new
 
-IRCClient\add_handler 'MODE', (prefix, args, trailing)=>
+IRCClient\add_handler 'MODE', (prefix, args)=>
 	-- User or bot called /mode
 	channel = args[1]
 	if channel\sub(1,1) == "#"
 		@log patterns.MODE\format channel, table.concat(args, " ", 2),
-			color(prefix\match('^(.-)!') or prefix)
+			color(prefix.nick)
 
-IRCClient\add_handler 'KICK', (prefix, args, trailing)=>
+IRCClient\add_handler 'KICK', (prefix, args)=>
 	channel = args[1]
 	nick = color(args[2])
-	kicker = color(prefix\match('^(.-)!') or prefix)
-	if trailing
-		@log patterns.KICK_2\format channel, kicker, nick, trailing
+	kicker = color(prefix.nick)
+	if args[3]
+		@log patterns.KICK_2\format channel, kicker, nick, args[3]
 	else
 		@log patterns.KICK\format channel, kicker, nick
 
-IRCClient\add_handler 'PART', (prefix, args, trailing)=>
+IRCClient\add_handler 'PART', (prefix, args)=>
 	-- User or bot parted channel, clear from lists
 	channel = args[1]
-	nick = color(prefix\match('^(.-)!') or prefix)
-	if trailing
-		@log patterns.PART_2\format channel, nick, trailing
+	nick = color(prefix.nick)
+	if args[3]
+		@log patterns.PART_2\format channel, nick, args[3]
 	else
 		@log patterns.PART\format channel, nick
 
-IRCClient\add_handler 'QUIT', (prefix, args, trailing, tags = {})=>
+IRCClient\add_handler 'QUIT', (prefix, args, tags = {})=>
 	-- User or bot parted network, nuke from lists
-	nick = color(prefix\match('^(.-)!') or prefix)
-	if trailing
-		@log patterns.QUIT_2\format nick, trailing
+	nick = color(prefix.nick)
+	if args[2]
+		@log patterns.QUIT_2\format nick, args[2]
 	else
 		@log patterns.QUIT\format nick
 
-IRCClient\add_handler 'PRIVMSG', (prefix, args, trailing)=>
-	nick = prefix\match('^(.-)!') or prefix
-	if not args[1]\sub(1, 1) == '#'
-		if trailing\match "^\001ACTION .-\001$"
+IRCClient\add_handler 'PRIVMSG', (prefix, args)=>
+	{:nick} = prefix
+	{target, message} = args
+	unless target\sub(1, 1) == '#'
+		if message\match "^\001ACTION .-\001$"
 			@log patterns.ACTION_2\format color(nick),
-				trailing\match('^%S+%s+(.+)')
-		elseif not trailing\match '^\001'
-			@log patterns.PRIVMSG_2\format color(nick), trailing
+				message\match('^%S+%s+(.+).')
+		elseif not message\match '^\001'
+			@log patterns.PRIVMSG_2\format color(nick), message
 	else
-		ch = args[1]
 		prefix = ""
-		if @users[nick] and @users[nick].channels[ch]
-			prefix = @users[nick].channels[ch].status\sub(1, 1) or ""
+		if @users[nick] and @users[nick].channels[target]
+			prefix = @users[nick].channels[target].status\sub(1, 1) or ""
 		if prefix != ""
 			prefix = color(prefix)
 		user = prefix .. color(nick)
-		if trailing\match "^\001ACTION .-\001$"
-			@log patterns.ACTION\format ch, user, trailing\match('^%S+%s+(.+)')
-		elseif not trailing\match '^\001'
-			@log patterns.PRIVMSG\format ch, user, trailing
+		if message\match "^\001ACTION .-\001$"
+			@log patterns.ACTION\format target, user, message\match('^%S+%s+(.+).')
+		elseif not message\match '^\001'
+			@log patterns.PRIVMSG\format target, user, message
 
-IRCClient\add_handler 'NOTICE', (prefix, args, trailing)=>
-	return if trailing\sub(1, 1) == '\001' -- CTCP
-	nick = prefix\match('^(.-)!') or prefix
+IRCClient\add_handler 'NOTICE', (prefix, args)=>
+	return if args[2]\sub(1, 1) == '\001' -- CTCP
+	{:nick} = prefix
 	if args[1]\sub(1, 1) == '#'
 		prefix = ""
 		if @users[nick] and @users[nick].channels[ch]
@@ -120,11 +120,11 @@ IRCClient\add_handler 'NOTICE', (prefix, args, trailing)=>
 		if prefix != ""
 			prefix = color(prefix)
 		user = prefix .. color(nick)
-		@log patterns.NOTICE\format args[1], user, trailing
+		@log patterns.NOTICE\format args[1], user, args[2]
 	else
-		@log patterns.NOTICE_2\format color(nick), trailing
+		@log patterns.NOTICE_2\format color(nick), args[2]
 
-IRCClient\add_handler 'INVITE', (prefix, args, trailing)=>
-	nick = color(prefix\match('^(.-)!') or prefix)
+IRCClient\add_handler 'INVITE', (prefix, args)=>
+	nick = color(prefix.nick)
 	channel = args[2]
 	@log patterns.INVITE\format channel, nick, args[1]

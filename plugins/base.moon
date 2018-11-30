@@ -12,7 +12,7 @@ IRCClient\add_hook 'READY', =>
 		for channel in *@config.autojoin
 			@send_raw ("JOIN %s")\format channel
 
-IRCClient\add_handler 'PING', (sender, args, last)=>
+IRCClient\add_handler 'PING', (prefix, args)=>
 	@send_raw ("PONG :%s")\format last
 
 IRCClient\add_handler 'ERROR', =>
