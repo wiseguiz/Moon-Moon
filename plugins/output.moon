@@ -84,8 +84,8 @@ IRCClient\add_handler 'PART', (prefix, args)=>
 IRCClient\add_handler 'QUIT', (prefix, args, tags = {})=>
 	-- User or bot parted network, nuke from lists
 	nick = color(prefix.nick)
-	if args[2]
-		@log patterns.QUIT_2\format nick, args[2]
+	if args[1]
+		@log patterns.QUIT_2\format nick, args[1]
 	else
 		@log patterns.QUIT\format nick
 
