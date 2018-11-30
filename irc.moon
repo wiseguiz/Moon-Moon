@@ -270,14 +270,7 @@ class IRCClient
 	--- Run handlers for an unparsed command
 	-- @tparam string line Incoming wire-string formatted line from IRC server
 	process: (line)=>
-		{
-			:tags,
-			:nick,
-			:user,
-			:host,
-			:command,
-			:args = @parse line
-		)
+		{:tags, :nick, :user, :host, :command, :args} = @parse line
 		Logger.debug Logger.level.warn .. '--- | Line: ' .. line
 		Logger.debug Logger.level.okay .. '--- |\\ Running trigger: ' .. Logger.level.warn .. command
 		if nick and user and host
