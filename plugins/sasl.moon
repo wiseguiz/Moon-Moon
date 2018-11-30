@@ -2,10 +2,20 @@ import to_base64 from require 'basexx'
 import IRCClient from require 'irc'
 
 handlers =
+	-- TODO abstract
+	EXTERNAL: =>
+		c = coroutine.create (auth)=>
+			prefix, command, args, trail = coroutine.yield "AUTHENTICATE EXTERNAL"
+			assert args[#args] == "+", "Unable to continue: #{trail}"
+			prefix, command, args, trail = coroutine.yield "AUTHENTICATE +"
+			assert command == "903" or command == "900", trail
+
+			@fire_hook 'CAP_ACK'
+			@sasl_handler = nil
 	PLAIN: =>
 		c = coroutine.create (auth)=>
 			prefix, command, args, trail = coroutine.yield "AUTHENTICATE PLAIN"
-			assert args[#args] == "+", "Unable to continue: #{table.concat(args)}"
+			assert args[#args] == "+", "Unable to continue: #{trail}"
 			payload = ""
 			payload ..= "#{auth.identity or auth.username}\000"
 			payload ..= "#{auth.username}\000#{auth.password}"
