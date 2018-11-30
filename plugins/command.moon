@@ -30,7 +30,7 @@ IRCClient\add_handler 'PRIVMSG', (prefix, args)=>
 	xpcall command, handle_error(self, channel, cmd_name), self, unpack(command_args)
 
 IRCClient\add_command "test", async: true, (prefix, channel)=>
-	nick = prefix\match "^[^!]+"
+	{:nick} = prefix
 
 	sleep 5
 
