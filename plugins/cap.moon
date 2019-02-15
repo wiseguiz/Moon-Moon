@@ -2,7 +2,7 @@ import IRCClient from require 'irc'
 
 caps = {'extended-join', 'multi-prefix', 'away-notify', 'account-notify',
 	    'chghost', 'server-time', 'echo-message', 'invite-notify'
-	    'draft/rename', 'sasl'}
+	    'draft/rename', 'sasl', 'draft/message-tags-0.2'}
 
 for cap in *caps
 	caps[cap] = true -- allow index-based lookup
@@ -52,13 +52,14 @@ IRCClient\add_handler 'CAP', (prefix, args)=>
 				@server.ircv3_caps[key] = value
 			else
 				@server.ircv3_caps[cap] = true
+			-- THIS ORDERING IS IMPORTANT in case something relying on a target
+			-- capability adds a new CAP_ACK waiter
 			@fire_hook "CAP_ACK.#{cap_name}", value
 			@fire_hook 'CAP_ACK'
 
 	-- Run CAP_ACK hook for NAK'd caps
 	elseif args[2] == 'NAK'
-		for i=1, #to_process
-			@fire_hook 'CAP_ACK'
+		@fire_hook 'CAP_ACK' for i=1, #to_process
 
 IRCClient\add_command "list-caps", (prefix, channel)=>
 	caps = [k for k in pairs(@server.ircv3_caps)]

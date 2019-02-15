@@ -13,7 +13,7 @@ IRCClient\add_hook 'READY', =>
 			@send_raw ("JOIN %s")\format channel
 
 IRCClient\add_handler 'PING', (prefix, args)=>
-	@send_raw ("PONG :%s")\format last
+	@send_raw ("PONG :%s")\format args[1]
 
 IRCClient\add_handler 'ERROR', =>
 	time = os.time()

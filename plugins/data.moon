@@ -17,14 +17,6 @@ IRCClient\add_hook 'CONNECT', =>
 	@data.last_connect = os.time()
 	@send_raw 'CAP LS 302'
 
-IRCClient\add_handler 'BATCH', (prefix, args, tags)=>
-	-- ::TODO:: add in hook system for BATCH
-	tag_type, tag = args[1]\match '(.)(.+)'
-	if tag_type == '+'
-		@server.batches[tag] = {unpack(args, 2)}
-	elseif tag_type == '-'
-		@server.batches[tag] = nil
-
 IRCClient\add_handler '005', (prefix, args)=>
 	-- Capabilities
 	isupport_caps = {select 2, unpack args}

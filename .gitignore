@@ -42,5 +42,7 @@ luac.out
 *.hex
 
 # LDoc output
-
 doc/
+
+# Lua files
+*.lua

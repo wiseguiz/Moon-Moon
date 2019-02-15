@@ -46,8 +46,9 @@ IRCClient\add_handler 'RENAME', (prefix, args)=>
 	else
 		@log patterns.RENAME_2\format args[1], args[2], nick, args[3]
 
-IRCClient\add_handler 'JOIN', (prefix, args, tags={})=>
+IRCClient\add_handler 'JOIN', (prefix, args, tags, opts)=>
 	-- user JOINs a channel
+	return if opts.in_batch
 	channel = args[1]
 	@log patterns.JOIN\format channel, color(prefix.nick)
 
@@ -81,8 +82,8 @@ IRCClient\add_handler 'PART', (prefix, args)=>
 	else
 		@log patterns.PART\format channel, nick
 
-IRCClient\add_handler 'QUIT', (prefix, args, tags = {})=>
-	-- User or bot parted network, nuke from lists
+IRCClient\add_handler 'QUIT', (prefix, args, tags, opts)=>
+	return if opts.in_batch -- post-batch output processing, is not normal
 	nick = color(prefix.nick)
 	if args[1]
 		@log patterns.QUIT_2\format nick, args[1]

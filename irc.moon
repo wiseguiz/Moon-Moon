@@ -32,6 +32,11 @@ class ContextTable
 		elseif index
 			index\get name, :multiple
 
+	remove: (name)=>
+		for context_name, tbl in pairs(self)
+			tbl[name] = nil
+
+
 class IRCClient
 	commands: ContextTable!
 	hooks: ContextTable!
@@ -44,12 +49,17 @@ class IRCClient
 
 	line_pattern = re.compile [[
 		-- tags, command, args
-		line <- {| (tags sp)? (prefix sp)? {:command: (command / numeric) :}
+		line <- {|
+			{:tags: {| (tags sp)? |} :}
+			{:prefix: {| (prefix sp)? |} :}
+			{:command: (command / numeric) :}
 			{:args: {| (sp arg)* |} :} |}
-		tags <- {:tags: '@' tag (';' tag)* :}
-		tag <- {| {:vendor: {[^/]+} '/' :}?
+		tags <- '@' tag (';' tag)*
+		tag <- {|
+			{:is_client: {'+'} :}? -- check: if tag.is_client
+			{:vendor: {[^/]+} '/' :}?
 			{:key: {[^=; ]+} -> esc_tag :}
-			{:value: ('=' [^; ]+) -> esc_tag :}?
+			{:value: ('=' {[^; ]+} -> esc_tag) :}?
 		|}
 		prefix <- ':' (
 			{:nick: {[^ !]+} :} '!'
@@ -98,6 +108,11 @@ class IRCClient
 				args = {...}
 				require("queue")\wrap ->
 					fn(unpack(args))
+
+		if options.wrap_iter
+			tmp_fn = coroutine.wrap fn
+			tmp_fn!
+			return tmp_fn
 
 		fn
 
@@ -235,7 +250,6 @@ class IRCClient
 	--- parse an IRC command using line_pattern
 	parse: (line)=> line_pattern\match line
 
-
 	--- Activate hooks configured for the event name
 	-- @tparam string hook_name Name of event to "fire"
 	-- @treturn boolean True if no errors were encountered, false otherwise
@@ -265,27 +279,42 @@ class IRCClient
 
 		Logger.debug Logger.level.error .. "*** Handler not found for #{command}" unless has_run
 
-		return has_errors, errors
+		return has_errors, errors, has_run
+
+	process_line: (line, opts={})=>
+		{:tags, :prefix, :command, :args} = @parse line
+		opts.line = line
+		@process prefix, command, args, tags, opts
 
 	--- Run handlers for an unparsed command
-	-- @tparam string line Incoming wire-string formatted line from IRC server
-	process: (line)=>
-		{:tags, :nick, :user, :host, :command, :args} = @parse line
-		Logger.debug Logger.level.warn .. '--- | Line: ' .. line
+	-- @tparam table prefix Prefix argument from server (nick, user, host)
+	-- @tparam table args Argument list from server, including trailing
+	-- @tparam table tags Tags list from server
+	-- @tparam table opts Optional arguments, in_batch: IRCv3 batching
+	process: (prefix, command, args, tags, opts={})=>
+		{:in_batch} = opts
+		{:nick, :user, :host} = prefix
+		Logger.debug Logger.level.warn .. '--- | Line: ' .. opts.line
 		Logger.debug Logger.level.okay .. '--- |\\ Running trigger: ' .. Logger.level.warn .. command
 		if nick and user and host
-			Logger.debug "#{Logger.level.okay} --- |\\ User: #{nick}!#{user}@#{host}"
+			Logger.debug "#{Logger.level.okay}--- |\\ User: #{nick}!#{user}@#{host}"
 		elseif nick
-			Logger.debug "#{Logger.level.okay} --- |\\ Nick: #{nick}"
+			Logger.debug "#{Logger.level.okay}--- |\\ Nick: #{nick}"
 		if #args > 0
-			Logger.debug "#{Logger.level.okay} --- |\\ Arguments: #{table.concat args}"
+			Logger.debug "#{Logger.level.okay}--- |\\ Arguments: #{table.concat args, ' '}"
 
 		has_run = false
+
+		if not in_batch and tags.batch
+			-- will return _, _, true if a hook run; this is necessary because
+			-- the protocol might send batches even if we don't support them.
+			return unless select(2, @fire_hook "BATCH.#{tags.batch}", prefix,
+				args, tags, opts)
 
 		for handler in *IRCClient.handlers\get command
 			has_run = true unless has_run
 			ok, err, tb = xpcall handler, self\log_traceback, self,
-				{:nick, :user, :host}, args, tags
+				prefix, args, tags, opts
 			if not ok
 				@log tb
 				@log Logger.level.error .. '*** ' .. err
@@ -293,7 +322,7 @@ class IRCClient
 		for handler in *@handlers\get command
 			has_run = true unless has_run
 			ok, err = xpcall handler, self\log_traceback, @,
-				prefix, args, rest, tags
+				prefix, args, tags, opts
 			if not ok
 				Logger.print Logger.level.error .. '*** ' .. err
 
@@ -303,17 +332,17 @@ class IRCClient
 	loop: ()=>
 		local line
 		print_error = (err)->
-			Logger.debug "Error: " .. err .. " (" .. line .. ")"
+			@log_traceback "Error: #{err} (#{line})"
 
 		for received_line in @socket\lines! do
 			line = received_line
-			xpcall @process, print_error, @, received_line
+			xpcall @process_line, print_error, @, received_line, in_batch: false
 
 	--- Print a traceback using the internal logging mechanism
 	-- @see IRCClient\log
 	log_traceback: (err)=>
 		@log Logger.level.error .. '*** ' .. err
-		@log debug.traceback()
+		@log debug.traceback!
 		@log Logger.level.error .. '---'
 
 	--- Log message from IRC server (used in plugins)
