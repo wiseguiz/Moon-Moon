@@ -87,7 +87,7 @@ class IRCClient
 		for k, v in pairs(default_config)
 			@config[k] = v
 		if config
-			for k, v in pairs(config)
+			for k, v in pairs config
 				@config[k] = v
 
 		@commands = ContextTable!
@@ -236,7 +236,8 @@ class IRCClient
 	-- @see IRCClient\add_sender
 	send: (name, ...)=>
 		sender = @senders\get name, multiple: false, index: IRCClient.senders
-		@send_raw sender(self, ...)
+		input = sender(self, ...)
+		@send_raw input if input
 
 	date_pattern: "(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+).(%d+)Z"
 
@@ -263,7 +264,7 @@ class IRCClient
 		for _, hook in pairs IRCClient.hooks\get hook_name
 			has_run = true unless has_run
 			Logger.debug Logger.level.warn .. '--- Running global hook: ' .. hook_name
-			ok, err = pcall hook, @, ...
+			ok, err = @pcall hook, ...
 			if not ok
 				has_errors = true if not has_errors
 				table.insert(errors, err)
@@ -271,7 +272,7 @@ class IRCClient
 		for _, hook in pairs @hooks\get hook_name
 			has_run = true unless has_run
 			Logger.debug Logger.level.warn .. '--- Running hook: ' .. hook_name
-			ok, err = pcall hook, @, ...
+			ok, err = @pcall hook, ...
 			if not ok
 				has_errors = true if not has_errors
 				table.insert(errors, err)
@@ -294,14 +295,15 @@ class IRCClient
 	process: (prefix, command, args, tags, opts={})=>
 		{:in_batch} = opts
 		{:nick, :user, :host} = prefix
-		Logger.debug Logger.level.warn .. '--- | Line: ' .. opts.line
-		Logger.debug Logger.level.okay .. '--- |\\ Running trigger: ' .. Logger.level.warn .. command
-		if nick and user and host
-			Logger.debug "#{Logger.level.okay}--- |\\ User: #{nick}!#{user}@#{host}"
-		elseif nick
-			Logger.debug "#{Logger.level.okay}--- |\\ Nick: #{nick}"
-		if #args > 0
-			Logger.debug "#{Logger.level.okay}--- |\\ Arguments: #{table.concat args, ' '}"
+		if opts.line
+			Logger.debug Logger.level.warn .. '--- | Line: ' .. opts.line
+			Logger.debug Logger.level.okay .. '--- |\\ Running trigger: ' .. Logger.level.warn .. command
+			if nick and user and host
+				Logger.debug "#{Logger.level.okay}--- |\\ User: #{nick}!#{user}@#{host}"
+			elseif nick
+				Logger.debug "#{Logger.level.okay}--- |\\ Nick: #{nick}"
+			if #args > 0
+				Logger.debug "#{Logger.level.okay}--- |\\ Arguments: #{table.concat args, ' '}"
 
 		has_run = false
 
@@ -313,37 +315,38 @@ class IRCClient
 
 		for handler in *IRCClient.handlers\get command
 			has_run = true unless has_run
-			ok, err, tb = xpcall handler, self\log_traceback, self,
-				prefix, args, tags, opts
-			if not ok
-				@log tb
-				@log Logger.level.error .. '*** ' .. err
+			@pcall handler, prefix, args, tags, opts
 
 		for handler in *@handlers\get command
 			has_run = true unless has_run
-			ok, err = xpcall handler, self\log_traceback, @,
-				prefix, args, tags, opts
-			if not ok
-				Logger.print Logger.level.error .. '*** ' .. err
+			@pcall handler, prefix, args, tags, opts
 
 		Logger.debug Logger.level.error .. "*** Handler not found for #{command}" unless has_run
 
 	--- Iterate over lines from a server and handle errors appropriately
 	loop: ()=>
-		local line
-		print_error = (err)->
-			@log_traceback "Error: #{err} (#{line})"
-
 		for received_line in @socket\lines! do
-			line = received_line
-			xpcall @process_line, print_error, @, received_line, in_batch: false
+			@pcall @process_line, received_line, in_batch: false
+
+	--- Call a function and, when failed, print debug information
+	-- @tparam function fn Function to be called
+	-- @param ... vararg list to pass to function
+	pcall: (fn, ...)=>
+		ok, err = xpcall fn, self\log_traceback, self, ...
+		if not ok
+			Logger.debug "Arguments:"
+			for arg in *{...}
+				Logger.debug tostring arg
+		return ok, err
 
 	--- Print a traceback using the internal logging mechanism
 	-- @see IRCClient\log
 	log_traceback: (err)=>
-		@log Logger.level.error .. '*** ' .. err
+		err = tostring(err)
+		@log "#{Logger.level.error} *** #{err}"
 		@log debug.traceback!
-		@log Logger.level.error .. '---'
+		@log "#{Logger.level.error} ---"
+		return err
 
 	--- Log message from IRC server (used in plugins)
 	-- @tparam string input Line to print, IRC color formatted
