@@ -3,8 +3,7 @@ import sleep from require "cqueues"
 
 unpack = unpack or table.unpack
 
-handle_error = (channel, command)=> (err)->
-	@log_traceback(err)
+handle_error = (channel, command, err)=>
 	@send "COMMAND_ERR", channel, command, "Error: #{err}"
 
 IRCClient\add_sender 'COMMAND_OK', (target, command_name, message)=>
@@ -25,11 +24,14 @@ IRCClient\add_handler 'PRIVMSG', (prefix, args)=>
 	return @send "COMMAND_ERR", channel, "core", "Command not found: #{cmd_name}" unless command
 
 	args = [arg for arg in message\gmatch "%S+", (message\find("%s") or #message) + 1]
-	command_args[#command_args + 1] = table.concat(args, " ")
+	command_args[#command_args + 1] = table.concat args, " "
 	command_args[#command_args + 1] = arg for arg in *args
-	xpcall command, handle_error(self, channel, cmd_name), self, unpack(command_args)
 
-IRCClient\add_command "test", async: true, (prefix, channel)=>
+	ok, err = @pcall command, unpack command_args
+	unless ok
+		handle_error self, channel, cmd_name, err
+
+IRCClient\add_command "test", (prefix, channel)=>
 	{:nick} = prefix
 
 	sleep 5
