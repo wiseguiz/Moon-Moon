@@ -3,9 +3,10 @@
 -- @script main.moon
 -- @author Ryan "ChickenNuggers" <ryan@hashbang.sh>
 
-Logger        = require 'logger' -- vim:set noet sts=0 sw=3 ts=3:
-cqueues       = require 'cqueues'
-lfs           = require 'lfs'
+Logger = require 'logger' -- vim:set noet sts=0 sw=3 ts=3:
+cqueues = require 'cqueues'
+lfs = require 'lfs'
+moonscript = require "moonscript"
 
 import IRCClient from require 'irc'
 
@@ -17,9 +18,9 @@ pcall -> -- use StackTracePlus if available; it's much better than builtin
 
 load_modules = (folder)->
 	for file in lfs.dir folder
-		if file\match "%.lua$"
+		if file\match "%.moon$"
 			path = "#{folder}/#{file}"
-			IRCClient\with_context path, loadfile path
+			IRCClient\with_context path, assert moonscript.loadfile path
 
 load_modules_in_plugin_folders = ->
 	for module_folder in *{'plugins', 'modules'}
@@ -33,13 +34,15 @@ conf_home = os.getenv('XDG_CONFIG_HOME') or os.getenv('HOME') .. '/.config'
 for file in lfs.dir "#{conf_home}/moonmoon"
 	if file\match "%.lua$"
 		local data
-		(loadfile "#{conf_home}/moonmoon/#{file}", nil, {
+		env =
 			bot: (name)->
 				return (file_data)->
 					file_data.name = name
 					file_data.file = file
 					data = file_data
-		})()
+
+		fn = assert loadfile("#{conf_home}/moonmoon/#{file}", nil, env)
+		fn!
 		unless data and data.server
 			print "Missing `server` field: [#{file}]"
 			continue
@@ -77,6 +80,6 @@ for bot in *bots
 				Logger.print Logger.level.error .. err
 
 while not queue\empty!
-	ok, err = queue\loop!
+	ok, err = queue\step!
 	if not ok
 		Logger.debug "#{Logger.level.error} *** #{err}"
