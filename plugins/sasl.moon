@@ -1,6 +1,8 @@
 import to_base64 from require 'basexx'
 import IRCClient from require 'irc'
 
+hmac = require "openssl.hmac"
+
 
 scram_hmac_methods = {
 	SHA: {
@@ -52,7 +54,7 @@ handlers =
 		return c
 	
 
-IRCClient\add_hook 'CAP_ACK.sasl', (values='SCRAM-SHA-256,PLAIN')=>
+IRCClient\add_hook 'CAP_ACK.sasl', (values='PLAIN')=>
 	return unless @config.auth
 	methods = [w for w in values\gmatch "[^,]+"]
 	if @config.auth.mechanism
@@ -87,5 +89,5 @@ for cmd in *{"AUTHENTICATE", "900", "901", "903", "904", "905", "906", "907"}
 			@sasl_method = nil
 			@fire_hook 'CAP_ACK' -- failed SASL, release lock on CAP END
 			error "Error in SASL mechanism: #{result}"
-		else
+		elseif result
 			@send_raw line for line in result\gmatch "[^\r\n]+"
