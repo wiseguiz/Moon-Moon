@@ -9,11 +9,15 @@ loaded as Lua bytecode.
 
 ### Dependencies
 
+[Lua](http://www.lua.org)
+
 [LuaRocks](https://luarocks.org) (recommended)
 
-[MoonScript](https://moonscript.org) (development)
+[MoonScript](https://moonscript.org)
 
-[Lua](http://www.lua.org)
+[pgmoon](https://github.com/RyanSquared/pgmoon)
+
+[basexx](https://github.com/aiq/basexx)
 
 [cqueues](http://25thandclement.com/~william/projects/cqueues.html)
 
