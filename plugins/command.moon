@@ -36,23 +36,38 @@ IRCClient\add_handler 'PRIVMSG', (prefix, args, tags)=>
 	command_args[#command_args + 1] = table.concat args, " "
 	command_args[#command_args + 1] = arg for arg in *args
 
-	command self, unpack command_args
-	--ok, err = @pcall command, unpack command_args
-	--unless ok
-	--	handle_error self, target, cmd_name, err
+	proxy_self = {
+		-- need to fill in @send_ok and @send_err
+		send_ok: (message)=>
+			@send "COMMAND_OK", target, cmd_name, message, msgid
+
+		send_err: (message)=>
+			@send "COMMAND_ERR", target, cmd_name, message, msgid
+	}
+
+	setmetatable proxy_self, __index: self
+
+	-- command proxy_self, unpack command_args
+	ok, err = @pcall_bare command, proxy_self, unpack command_args
+	unless ok
+		handle_error self, target, cmd_name, err
 
 IRCClient\add_command "test", async: true, (prefix, target, tags)=>
 	{:nick} = prefix
 
-	msgid = @get_tag(tags, key: 'msgid').value
-
 	sleep 5
 
 	if @users[nick] and @users[nick].account
-		@send "COMMAND_OK", target, "test", "Account name: #{@users[nick].account}", msgid
+		@send_ok "Account name: #{@users[nick].account}"
 	else
-		@send "COMMAND_ERR", target, "test", "Account not found for: #{nick}", msgid
+		@send_err "Account not known for: #{nick}"
 
 IRCClient\add_command "caps", (prefix, target)=>
 	line = [k for k in pairs @server.ircv3_caps]
-	@send "COMMAND_OK", target, "caps", table.concat(line, ", ")
+	@send_ok table.concat(line, " ")
+
+IRCClient\add_command "test_err", (prefix, target)=>
+	@send_err "Error result"
+
+IRCClient\add_command "test_fail", (prefix, target)=>
+	error "test"
