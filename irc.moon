@@ -190,9 +190,16 @@ class IRCClient
 			if options.async
 				-- async, send @+draft/typing 
 				final_command = (prefix, target, line, ...)=>
-					@send 'TAGMSG', target, "+draft/typing": "active"
+					@vars.typing_counter = 0 if not @vars.typing_counter
+					@vars.typing_counter += 1
+					@send 'TAGMSG', target, "+draft/typing": 'active'
 					@pcall command, prefix, target, line, ...
-					@send 'TAGMSG', target, "+draft/typing": "done"
+					@vars.typing_counter -= 1
+					print @vars.typing_counter
+					if @vars.typing_counter == 0
+						@send 'TAGMSG', target, "+draft/typing": 'done'
+					else
+						@send 'TAGMSG', target, "+draft/typing": 'active'
 
 		p = get_priority options, final_command
 		commands[p][name] = @handle_options options, final_command
