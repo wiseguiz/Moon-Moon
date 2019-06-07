@@ -107,8 +107,10 @@ class IRCClient
 	get_tag: (tags, opts)=>
 		:is_client, :key = opts
 		for tag in *tags
-			continue if is_client ~= nil and tag.is_client == is_client
-			continue if key ~= nil and key == "#{tag.vendor}/#{tag.key}"
+			continue if is_client ~= nil and tag.is_client ~= is_client
+			if key ~= nil
+				continue if tag.vendor ~= nil and key ~= "#{tag.vendor}/#{tag.key}"
+				continue if tag.vendor == nil and key ~= tag.key
 			return tag
 
 
