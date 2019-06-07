@@ -23,7 +23,8 @@ IRCClient\add_handler 'PRIVMSG', (prefix, args)=>
 	command = @commands\get cmd_name, multiple: false, index: IRCClient.commands
 	return @send "COMMAND_ERR", target, "core", "Command not found: #{cmd_name}" unless command
 
-	args = [arg for arg in message\gmatch "%S+", (message\find("%s") or #message) + 1]
+	args_start = (message\find"%s" or #message) + 1
+	args = [arg for arg in message\sub(args_start)\gmatch "%S+"]
 	command_args[#command_args + 1] = table.concat args, " "
 	command_args[#command_args + 1] = arg for arg in *args
 
