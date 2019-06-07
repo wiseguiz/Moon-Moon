@@ -79,7 +79,7 @@ color_to_xterm = (line)->
 
 --- Change a line from IRC color to xterm color, and print the line
 -- @tparam string line
-print = (line)->
+printx = (line)->
 	local output_line
 	if _color
 		output_line = color_to_xterm os.date('[%X]')\gsub('.', (ch)->
@@ -92,6 +92,11 @@ print = (line)->
 		output_line = os.date('[%X] ') .. tostring line
 	
 	_print output_line
+
+--- Change multiple lines from IRC color to xterm color, and print lines
+-- @tparam string line
+print = (lines)->
+	printx line for line in lines\gmatch "[^\r\n]+"
 
 --- Print the `line` argument if debug is enabled, otherwise print `default`
 -- @tparam string line

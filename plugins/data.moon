@@ -1,4 +1,4 @@
-import IRCClient from require 'irc'
+import IRCClient, priority from require 'irc'
 
 unpack = unpack or table.unpack
 
@@ -15,7 +15,7 @@ IRCClient\add_hook 'CONNECT', =>
 	-- Welcome
 	@data = {} if not @data
 	@data.last_connect = os.time()
-	@send_raw 'CAP LS 302'
+	@send_raw 'CAP', 'LS', '302'
 
 IRCClient\add_handler '005', (prefix, args)=>
 	-- Capabilities
@@ -85,11 +85,11 @@ IRCClient\add_handler 'JOIN', (prefix, args, tags={})=>
 		@users[nick].account = account if account
 	if not @channels[channel]
 		if @server.caps['WHOX']
-			@send_raw "WHO #{channel} %nat,001"
+			@send_raw 'WHO', channel, '%nat,001'
 		elseif @server.ircv3_caps['userhost-in-names']
-			@send_raw ('NAMES %s')\format channel
+			@send_raw 'NAMES', channel
 		else
-			@send_raw ('WHO %s')\format channel
+			@send_raw 'WHO', channel
 
 		@channels[channel] = {
 			users: {
@@ -114,7 +114,7 @@ IRCClient\add_handler 'NICK', (prefix, args)=>
 IRCClient\add_handler 'MODE', (prefix, args)=>
 	-- User or bot called /mode
 	if args[1] and args[1]\sub(1,1) == "#"
-		@send_raw ('NAMES %s')\format args[1]
+		@send_raw 'NAMES', args[1]
 
 IRCClient\add_handler '353', (prefix, args)=>
 	-- Result of NAMES
@@ -177,3 +177,8 @@ IRCClient\add_handler 'QUIT', (prefix, args)=>
 	for channel in pairs @users[nick].channels
 		@channels[channel].users[nick] = nil
 	@users[nick] = nil
+
+IRCClient\add_handler 'PRIVMSG', priority: priority.HIGH, (prefix, args, tags={})=>
+	account_tag = @get_tag tags, key: "account"
+	if account_tag and prefix.nick and @users[prefix.nick]
+		@users[prefix.nick].account = account_tag.value

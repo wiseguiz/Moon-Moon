@@ -10,10 +10,10 @@ IRCClient\add_hook 'READY', =>
 	if @config.autojoin
 		-- ::TODO:: properly
 		for channel in *@config.autojoin
-			@send_raw ("JOIN %s")\format channel
+			@send_raw "JOIN", channel
 
 IRCClient\add_handler 'PING', (prefix, args)=>
-	@send_raw ("PONG :%s")\format args[1]
+	@send_raw "PONG", unpack args
 
 IRCClient\add_handler 'ERROR', =>
 	time = os.time()
@@ -29,15 +29,18 @@ IRCClient\add_handler '433', =>
 	if @data.nick_test >= 30
 		@disconnect!
 	else
-		@send_raw ('NICK %s[%d]')\format @config.nick, @data.nick_test
+		@send_raw 'NICK', "#{@config.nick}[#{@data.nick_test}]"
 
 IRCClient\add_handler '354', (prefix, args)=>
 	table.remove(args, 1)
 	query_type = table.remove(args, 1)
 	@fire_hook "WHOX_#{query_type}", unpack(args)
 
-IRCClient\add_sender 'PRIVMSG', (channel, message)=>
+IRCClient\add_sender 'PRIVMSG', (target, message, tags={})=>
 	for line in message\gmatch("[^\r\n]+")
-		@send_raw "PRIVMSG #{channel} :#{line}"
+		@send_raw 'PRIVMSG', target, line, tags: tags
 		unless @server.ircv3_caps["echo-message"]
-			@process_line ":#{@config.nick}!local@localhost PRIVMSG #{channel} :(local) #{line}"
+			@process_line ":#{@config.nick}!local@localhost PRIVMSG #{target} :(local) #{line}"
+
+IRCClient\add_sender 'TAGMSG', (target, tags={})=>
+	@send_raw 'TAGMSG', target, tags: tags

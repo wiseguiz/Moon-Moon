@@ -15,9 +15,9 @@ handlers =
 	-- TODO abstract
 	EXTERNAL: =>
 		c = coroutine.create (auth)=>
-			prefix, command, args = coroutine.yield "AUTHENTICATE EXTERNAL"
+			prefix, command, args = coroutine.yield "AUTHENTICATE", "EXTERNAL"
 			assert args[1] == "+", "Unable to continue: #{args[#args]}"
-			prefix, command, args = coroutine.yield "AUTHENTICATE +"
+			prefix, command, args = coroutine.yield "AUTHENTICATE", "+"
 			assert command == "903" or command == "900", args[#args]
 
 			@fire_hook 'CAP_ACK'
@@ -37,13 +37,13 @@ handlers =
 
 	PLAIN: =>
 		c = coroutine.create (auth)=>
-			prefix, command, args = coroutine.yield "AUTHENTICATE PLAIN"
+			prefix, command, args = coroutine.yield "AUTHENTICATE", "PLAIN"
 			assert args[1] == "+", "Unable to continue: #{args[#args]}"
 			payload = ""
 			payload ..= "#{auth.identity or auth.username}\000"
 			payload ..= "#{auth.username}\000#{auth.password}"
-			payload = "AUTHENTICATE #{to_base64 payload}"
-			prefix, command, args = coroutine.yield payload
+			payload = to_base64 payload
+			prefix, command, args = coroutine.yield "AUTHENTICATE", payload
 			assert command == "903" or command == "900", args[#args]
 
 			-- destroy self on finish
@@ -80,14 +80,16 @@ IRCClient\add_handler "908", (_, args)=>
 	@sasl_handler = nil
 	@fire_hook 'CAP_ACK.sasl', args[2]
 
+unpack = unpack or table.unpack
+
 for cmd in *{"AUTHENTICATE", "900", "901", "903", "904", "905", "906", "907"}
 	IRCClient\add_handler cmd, (prefix, args)=>
 		return if not @sasl_handler
-		ok, result = coroutine.resume @sasl_handler, prefix, cmd, args
-		if not ok
+		values = {coroutine.resume @sasl_handler, prefix, cmd, args}
+		if not values[1]
 			@sasl_handler = nil
 			@sasl_method = nil
 			@fire_hook 'CAP_ACK' -- failed SASL, release lock on CAP END
 			error "Error in SASL mechanism: #{result}"
-		elseif result
-			@send_raw line for line in result\gmatch "[^\r\n]+"
+		elseif values[2]
+			@send_raw unpack(values, 2)
