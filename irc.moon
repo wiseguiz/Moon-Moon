@@ -439,7 +439,6 @@ class IRCClient
 	-- @see IRCClient\log
 	log_traceback: (err)=>
 		err = tostring err
-		Logger.print "#{Logger.level.error} *** #{err}"
 		Logger.debug moonscript.errors.rewrite_traceback debug.traceback!, err
 		Logger.debug "#{Logger.level.error} ---"
 		return err
