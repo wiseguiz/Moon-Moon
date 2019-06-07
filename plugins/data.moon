@@ -10,6 +10,7 @@ IRCClient\add_hook 'CONNECT', =>
 		ircv3_caps: {}
 		batches:    {}
 	}
+	@vars = {}
 
 IRCClient\add_hook 'CONNECT', =>
 	-- Welcome
