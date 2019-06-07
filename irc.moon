@@ -113,6 +113,8 @@ class IRCClient
 				continue if tag.vendor == nil and key ~= tag.key
 			return tag
 
+		return {}
+
 
 	--- Generate a new IRCClient
 	-- @tparam string server IRC server name
