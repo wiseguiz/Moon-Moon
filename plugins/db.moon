@@ -1,10 +1,10 @@
-import IRCClient from require "irc"
+import IRCClient from require "lib.irc"
 
 pgmoon = require "pgmoon"
 
 IRCClient\add_command "init-db", (prefix, channel)=>
 	nick = prefix\match "^[^!]+"
-	account = @users[nick] and @users[nick].account
+	account = @users\expect(nick).account
 	valid_account = @config.owner_account
 	assert account == valid_account, "You're not #{valid_account}"
 	@db = pgmoon.new

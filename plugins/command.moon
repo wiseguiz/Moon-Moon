@@ -1,4 +1,4 @@
-import IRCClient from require "irc"
+import IRCClient from require "lib.irc"
 import sleep from require "cqueues"
 
 unpack = unpack or table.unpack
@@ -57,10 +57,11 @@ IRCClient\add_command "test", async: true, (prefix, target, tags)=>
 
 	sleep 5
 
-	if @users[nick] and @users[nick].account
-		@send_ok "Account name: #{@users[nick].account}"
-	else
-		@send_err "Account not known for: #{nick}"
+	@users\get(nick)\and_then (client)->
+		if client.account != ""
+			@send_ok "Account name: #{client.account}" if client.account != ""
+		else
+			@send_err "Account not known for: #{nick}"
 
 IRCClient\add_command "caps", (prefix, target)=>
 	line = [k for k in pairs @server.ircv3_caps]

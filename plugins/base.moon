@@ -1,5 +1,5 @@
 cqueues = require 'cqueues'
-import IRCClient from require 'irc'
+import IRCClient from require 'lib.irc'
 
 unpack = unpack or table.unpack
 

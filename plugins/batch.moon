@@ -1,4 +1,4 @@
-import IRCClient from require "irc"
+import IRCClient from require "lib.irc"
 
 [[
 	How to use batches:

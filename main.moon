@@ -8,7 +8,7 @@ cqueues = require 'cqueues'
 lfs = require 'lfs'
 moonscript = require "moonscript"
 
-import IRCClient from require 'irc'
+import IRCClient from require 'lib.irc'
 
 wd = lfs.currentdir()
 Logger.set_debug true if os.getenv 'DEBUG'

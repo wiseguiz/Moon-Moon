@@ -1,5 +1,5 @@
 import to_base64 from require 'basexx'
-import IRCClient from require 'irc'
+import IRCClient from require 'lib.irc'
 
 hmac = require "openssl.hmac"
 

@@ -1,4 +1,4 @@
-import IRCClient from require 'irc'
+import IRCClient from require 'lib.irc'
 
 colors = {3, 4, 6, 8, 9, 10, 11, 13} -- "bright" pallet of IRC colors
 
@@ -101,8 +101,9 @@ IRCClient\add_handler 'PRIVMSG', (prefix, args)=>
 			@log patterns.PRIVMSG_2\format color(nick), message
 	else
 		prefix = ""
-		if @users[nick] and @users[nick].channels[target]
-			prefix = @users[nick].channels[target].status\sub(1, 1) or ""
+		@users\get(nick)\and_then (client)->
+			client.channels\get(target)\and_then (channel)->
+				prefix = channel.statuses\entry(nick)\or_insert ""
 		if prefix != ""
 			prefix = color(prefix)
 		user = prefix .. color(nick)
@@ -116,8 +117,9 @@ IRCClient\add_handler 'NOTICE', (prefix, args)=>
 	{:nick} = prefix
 	if args[1]\sub(1, 1) == '#'
 		prefix = ""
-		if @users[nick] and @users[nick].channels[ch]
-			prefix = @users[nick].channels[ch].status\sub(1, 1) or ""
+		@users\get(nick)\and_then (client)->
+			client.channels\get(args[1])\and_then (channel)->
+				prefix = channel.statuses\entry(nick)\or_insert ""
 		if prefix != ""
 			prefix = color(prefix)
 		user = prefix .. color(nick)
