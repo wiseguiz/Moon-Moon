@@ -33,9 +33,10 @@ access to system directories. LuaRocks is recommended to allow for easy
 installation of all the required software.
 
 ```sh
+$ luarocks install basexx
 $ luarocks install cqueues
 $ luarocks install luafilesystem
-$ luarocks install moonscript # Optional
+$ luarocks install moonscript
 ```
 
 ### Configuration
