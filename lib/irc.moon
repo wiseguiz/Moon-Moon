@@ -20,14 +20,13 @@ priority = {
 }
 
 class ContextTable
-	-- ::TODO:: allow for multiple *and* index
 	get: (name, opts = {})=>
-		:multiple, :index, :uses_priority = opts
+		:multiple, :index, :uses_priority, :current = opts
 		multiple = true if multiple == nil
 		uses_priority = true if uses_priority == nil
 
 		local output
-		output = {} if multiple
+		output = current or {} if multiple
 		for context, items in pairs(self)
 			-- context
 			if multiple
@@ -49,10 +48,10 @@ class ContextTable
 				else
 					return items[name] if items[name] ~= nil
 
-		if multiple
-			output
-		elseif index
-			index\get name, :multiple, :uses_priority
+		if multiple and not index
+			return output
+		if index
+			return index\get name, :multiple, :uses_priority, current: output
 
 	remove: (name)=>
 		for context_name, tbl in pairs(self)
