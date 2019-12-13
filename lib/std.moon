@@ -22,11 +22,11 @@ class Result
 
 	--- Raise error if is_err!, otherwise return content
 	unwrap: =>
-		@content if @is_ok! else error content
+		@content if @is_ok! else error @content
 
 	--- Raises error if is_ok!, otherwise returns error value
 	unwrap_err: =>
-		@content if @is_err! else error content
+		@content if @is_err! else error @content
 
 	--- Returns content if is_ok!, otherwise `fallback`
 	-- @param fallback
@@ -255,7 +255,8 @@ class Map
 	get: (key)=> Option @data[key]
 
 	--- Return a value expected to exist in the Map
-	expect: (key)=> @get(key)\expect!
+	expect: (key, message)=>
+		@get(key)\expect message
 
 	--- Set a `value` in the Map to an associated `key`
 	-- @param key
