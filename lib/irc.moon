@@ -466,8 +466,7 @@ class IRCClient
 	-- @see logger
 	log: (input)=>
 		for line in input\gmatch "[^\r\n]+"
-			Logger.print '\00311(\003' .. (@server.caps and
-				@server.caps['NETWORK'] or @config.server) ..
-				"\00311)\003 #{line}"
+			server_name = @config.server_name or @server.caps['NETWORK'] or @config.server
+			Logger.print '\00311(\003' .. server_name ..  "\00311)\003 #{line}"
 
 return {:IRCClient, :priority}
