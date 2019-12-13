@@ -194,7 +194,6 @@ class IRCClient
 					@send 'TAGMSG', target, "+draft/typing": 'active'
 					@pcall command, prefix, target, line, ...
 					@vars.typing_counter -= 1
-					print @vars.typing_counter
 					if @vars.typing_counter == 0
 						@send 'TAGMSG', target, "+draft/typing": 'done'
 					else
@@ -273,12 +272,12 @@ class IRCClient
 		real = @config.realname
 		pass = @config.password
 		Logger.print Logger.level.warn .. '--- Sending authentication data'
-		@send_raw 'NICK', nick
 		if pass and ssl
 			Logger.debug '*** Sending password'
 			@send_raw 'PASS', pass
 		elseif pass
 			Logger.print Logger.level.error .. '*** Not sending password: TLS not enabled ***'
+		@send_raw 'NICK', nick
 		@send_raw 'USER', user, '*', '*', real
 		debug_msg = ('Sent authentication data: {nickname: %s, username: %s, realname: %s}')\format nick, user, real
 		Logger.debug debug_msg, Logger.level.okay .. '--- Sent authentication data'
