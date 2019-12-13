@@ -83,7 +83,7 @@ class IRCClient
 			{:is_client: {'+'} :}? -- check: if tag.is_client
 			{:vendor: {[^/]+} '/' :}?
 			{:key: {[^=; ]+} -> esc_tag :}
-			{:value: ('=' {[^; ]+} -> esc_tag) :}?
+			{:value: ('=' {[^; ]*} -> esc_tag) :}?
 		|}
 		prefix <- ':' (
 			{:nick: {[^ !]+} :} '!'
