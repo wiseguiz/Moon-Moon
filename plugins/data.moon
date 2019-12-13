@@ -1,8 +1,6 @@
 import IRCClient, priority from require 'lib.irc'
-import Map from require 'lib.std'
+import Map, Option from require 'lib.std'
 import Channel, User from require 'lib.models'
-
-print User
 
 unpack = unpack or table.unpack
 
@@ -67,7 +65,7 @@ IRCClient\add_handler 'JOIN', (prefix, args, tags={})=>
 		channel = args[1]
 	{:nick, :user, :host} = prefix
 
-	new_user = User {:user, :host, :account}
+	new_user = User user, host, :account
 
 	-- Make sure channel exists
 	-- Confirm channel exists in bot object
@@ -125,19 +123,20 @@ IRCClient\add_handler '353', (prefix, args)=>
 		if text\match statuses
 			status, pre = text\match "^(#{statuses}*)(.-)$"
 		else
-			status, pre = '', text
+			status, pre = nil, text
 		if @server.ircv3_caps['userhost-in-names']
 			nick, ident, host = pre\match '^(.-)!(.-)@(.-)$'
 		else
 			nick = pre
 
-		channel.statuses\set nick, status
+		channel.statuses\set nick, Option status
 
-		unless @users\contains_key nick -- NAMES not triggered from JOIN
-			@users\set nick, User user: ident, :host
-		user = @users\expect nick
-		user.user = ident
-		user.host = host
+		if @users\contains_key nick -- NAMES not triggered from JOIN
+			user = @users\expect nick
+			user.user = ident
+			user.host = host
+		else
+			@users\set nick, User(ident, host)
 
 		-- Make sure channels and users both have links to each other
 		channel.users\set nick, @users\expect nick
@@ -146,10 +145,8 @@ IRCClient\add_handler '353', (prefix, args)=>
 IRCClient\add_handler '352', (prefix, args)=>
 	-- Result of WHO
 	_, user, host, _, nick, away = unpack args
-	client = @users\entry(nick)\or_insert_with -> User!
-	client.user = user
-	client.host = host
-	client.away = away\sub(1, 1) == "G"
+	client = @users\entry(nick)\or_insert_with -> User :user, :host
+	client.away = away\sub(1, 1) == "G" -- "H"ere or "G"one
 
 IRCClient\add_handler 'CHGHOST', (prefix, args)=>
 	{:nick} = prefix

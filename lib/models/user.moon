@@ -1,12 +1,12 @@
-import Map from require 'lib.std'
+import Map, Option from require 'lib.std'
 
 class User
-	new: (input)=>
-		@user = input.user or "" -- ::TODO:: assert?
-		@host = input.host or "" -- ::TODO:: assert?
-		@account = input.account or ""
-		@away = input.away == true
-		@channels = Map input.channels or {}
+	new: (user, host, opts)=>
+		@user = input.user
+		@host = input.host
+		@account = Option opts.account
+		@away = opts.away == true
+		@channels = Map opts.channels or {}
 
 	is_visible: =>
 		-- Add more as the bot "follows" more
