@@ -41,6 +41,12 @@ for file in lfs.dir "#{conf_home}/moonmoon"
 					file_data.file = file
 					data = file_data
 
+			async: (fn)->
+				return (...)->
+					args = {...}
+					require("queue")\wrap -> fn table.unpack args
+		setmetatable(env, __index: _ENV)
+
 		fn = assert loadfile("#{conf_home}/moonmoon/#{file}", nil, env)
 		fn!
 		unless data and data.server
