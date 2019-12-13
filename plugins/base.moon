@@ -8,9 +8,9 @@ for tmp_cmd in *{'422', '376'}
 
 IRCClient\add_hook 'READY', =>
 	if @config.autojoin
-		-- ::TODO:: properly
-		for channel in *@config.autojoin
-			@send_raw "JOIN", channel
+		channels = @config.autojoin
+		for i=1, #channels, 4
+			@send_raw "JOIN", table.concat({channels[i], channels[i+1], channels[i+2], channels[i+3]}, ",")
 
 IRCClient\add_handler 'PING', (prefix, args)=>
 	@send_raw "PONG", unpack args
