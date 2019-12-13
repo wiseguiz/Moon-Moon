@@ -59,6 +59,10 @@ for file in lfs.dir "#{conf_home}/moonmoon"
 				else
 					print ("%q: %s")\format key, value
 		bot = IRCClient data.server, data.port, data
+		bot\with_context "config", ->
+			if bot.config.custom_commands
+				for command, handler in pairs bot.config.custom_commands
+					bot\add_command command, handler
 		table.insert(bots, bot)
 
 queue = cqueues.new!
