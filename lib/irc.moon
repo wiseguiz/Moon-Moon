@@ -92,7 +92,7 @@ class IRCClient
 			{:nick: {[^ ]+} :})
 		command <- [A-Za-z]+
 		numeric <- %d^+3^-4 -- at most four digits, at least three
-		arg <- ':' {.+} / {%S+}
+		arg <- ':' {.+} / {[^ ]+}
 		sp <- %s
 	]], esc_tag: (tag)-> tag\gsub "\\(.)", setmetatable({
 		[":"]: ";"
