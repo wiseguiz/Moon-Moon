@@ -354,20 +354,29 @@ class IRCClient
 		has_errors = false
 		errors = {}
 
-		for _, hook in pairs IRCClient.hooks\get hook_name
+
+		for hook in *(@hooks\get hook_name, index: IRCClient.hooks)
 			has_run = true unless has_run
 			Logger.debug Logger.level.warn .. '--- Running global hook: ' .. hook_name
 			ok, err = @pcall hook, ...
 			if not ok
 				has_errors = true if not has_errors
 				table.insert(errors, err)
-		for _, hook in pairs @hooks\get hook_name
-			has_run = true unless has_run
-			Logger.debug Logger.level.warn .. '--- Running hook: ' .. hook_name
-			ok, err = @pcall hook, ...
-			if not ok
-				has_errors = true if not has_errors
-				table.insert(errors, err)
+
+		-- for _, hook in pairs IRCClient.hooks\get hook_name
+		---	has_run = true unless has_run
+		---	Logger.debug Logger.level.warn .. '--- Running global hook: ' .. hook_name
+		---	ok, err = @pcall hook, ...
+		---	if not ok
+		---		has_errors = true if not has_errors
+		---		table.insert(errors, err)
+		-- for _, hook in pairs @hooks\get hook_name
+		---	has_run = true unless has_run
+		---	Logger.debug Logger.level.warn .. '--- Running hook: ' .. hook_name
+		---	ok, err = @pcall hook, ...
+		---	if not ok
+		---		has_errors = true if not has_errors
+		---		table.insert(errors, err)
 
 		Logger.debug Logger.level.error .. "*** Hook not found for #{command}" unless has_run
 
@@ -404,13 +413,17 @@ class IRCClient
 			return unless select(2, @fire_hook "BATCH.#{tags.batch}", prefix,
 				args, tags, opts)
 
-		for handler in *IRCClient.handlers\get command
+		for handler in *@handlers\get command, index: IRCClient.handlers
 			has_run = true unless has_run
 			@pcall handler, prefix, args, tags, opts
 
-		for handler in *@handlers\get command
-			has_run = true unless has_run
-			@pcall handler, prefix, args, tags, opts
+		-- for handler in *IRCClient.handlers\get command
+		---	has_run = true unless has_run
+		---	@pcall handler, prefix, args, tags, opts
+
+		-- for handler in *@handlers\get command
+		---	has_run = true unless has_run
+		---	@pcall handler, prefix, args, tags, opts
 
 		Logger.debug Logger.level.error .. "*** Handler not found for #{command}" unless has_run
 
