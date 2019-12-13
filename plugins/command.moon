@@ -8,15 +8,25 @@ handle_error = (target, command, err)=>
 
 IRCClient\add_sender 'COMMAND_OK', (target, command_name, message, msgid)=>
 	if msgid
-		@send "PRIVMSG", target, "[\00303#{command_name}\003] #{message}", "+draft/reply": msgid
+		if @config.strip_colors
+			@send "PRIVMSG", target, "[#{command_name}] #{message}", "+draft/reply": msgid
 	else
-		@send "PRIVMSG", target, "[\00303#{command_name}\003] #{message}"
+		if @config.strip_colors
+			@send "PRIVMSG", target, "[#{command_name}] #{message}"
+		else
+			@send "PRIVMSG", target, "[\00303#{command_name}\003] #{message}"
 
 IRCClient\add_sender 'COMMAND_ERR', (target, command_name, message, msgid)=>
 	if msgid
-		@send "PRIVMSG", target, "[\00304!#{command_name}\003] #{message}", "+draft/reply": msgid
+		if @config.strip_colors
+			@send "PRIVMSG", target, "[!#{command_name}] #{message}", "+draft/reply": msgid
+		else
+			@send "PRIVMSG", target, "[\00304!#{command_name}\003] #{message}", "+draft/reply": msgid
 	else
-		@send "PRIVMSG", target, "[\00304!#{command_name}\003] #{message}"
+		if @config.strip_colors
+			@send "PRIVMSG", target, "[!#{command_name}] #{message}"
+		else
+			@send "PRIVMSG", target, "[\00304!#{command_name}\003] #{message}"
 
 IRCClient\add_handler 'PRIVMSG', (prefix, args, tags)=>
 	{target, message} = args
