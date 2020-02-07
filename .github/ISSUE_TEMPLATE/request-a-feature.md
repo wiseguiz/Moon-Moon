@@ -5,6 +5,7 @@ about: Request a feature to be added
 
 ### System:
 
+- [ ] Internal
 - [ ] Bot Plugin
 - [ ] Bot Command
 - [ ] Async Subprocess
