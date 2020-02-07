@@ -1,3 +1,9 @@
+---
+name: Report a Bug
+about: Report a bug with Moon Moon
+---
+
+
 Please make sure you list all of the following options when adding an
 issue, and remove these two lines:
 
