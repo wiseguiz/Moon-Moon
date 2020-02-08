@@ -79,7 +79,7 @@ IRCClient\add_handler 'JOIN', (prefix, args, tags={})=>
 		else
 			@send_raw 'WHO', channel
 
-		channel_entry\or_insert Channel self, {
+		channel_entry\or_insert Channel self, channel, {
 			users: {
 				[nick]: new_user
 			}
