@@ -38,7 +38,7 @@ IRCClient\add_handler '005', (prefix, args)=>
 
 IRCClient\add_handler 'AWAY', (prefix, args)=>
 	{:nick} = prefix
-	@users\expect(nick).away = args[#args]
+	@users\expect(nick).away = args[#args] == "G"
 
 IRCClient\add_handler 'ACCOUNT', (prefix, args)=>
 	@users\expect(nick).account = Option args[1] != "*" and args[1] or nil
