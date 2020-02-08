@@ -41,7 +41,7 @@ IRCClient\add_handler 'AWAY', (prefix, args)=>
 	@users\expect(nick).away = args[#args]
 
 IRCClient\add_handler 'ACCOUNT', (prefix, args)=>
-	@users\expect(nick).account = args[1] != "*" and args[1] or nil
+	@users\expect(nick).account = Option args[1] != "*" and args[1] or nil
 
 IRCClient\add_handler 'RENAME', (prefix, args)=>
 	{old, new} = args
@@ -65,7 +65,7 @@ IRCClient\add_handler 'JOIN', (prefix, args, tags={})=>
 		channel = args[1]
 	{:nick, :user, :host} = prefix
 
-	new_user = User user, host, :account
+	new_user = User self, nick, user, host, :account
 
 	-- Make sure channel exists
 	-- Confirm channel exists in bot object
@@ -79,7 +79,7 @@ IRCClient\add_handler 'JOIN', (prefix, args, tags={})=>
 		else
 			@send_raw 'WHO', channel
 
-		channel_entry\or_insert Channel {
+		channel_entry\or_insert Channel self, {
 			users: {
 				[nick]: new_user
 			}
@@ -93,7 +93,7 @@ IRCClient\add_handler 'JOIN', (prefix, args, tags={})=>
 	@users\set nick, new_user
 
 IRCClient\add_hook 'WHOX_001', (nick, account)=>
-	@users\expect(nick).account = account if account != '0'
+	@users\expect(nick).account = Option(account) if account != '0'
 
 IRCClient\add_handler 'NICK', (prefix, args)=>
 	old = prefix.nick
@@ -119,7 +119,7 @@ IRCClient\add_handler '353', (prefix, args)=>
 	channel = @channels\expect target
 
 	for text in args[#args]\gmatch '%S+'
-		local status, pre, nick, user, host
+		local status, pre, nick, ident, host
 		if text\match statuses
 			status, pre = text\match "^(#{statuses}*)(.-)$"
 		else
@@ -129,14 +129,14 @@ IRCClient\add_handler '353', (prefix, args)=>
 		else
 			nick = pre
 
-		channel.statuses\set nick, Option status
+		channel.statuses\set nick, status
 
 		if @users\contains_key nick -- NAMES not triggered from JOIN
 			user = @users\expect nick
-			user.user = ident
-			user.host = host
+			user.user = ident if ident
+			user.host = host if host
 		else
-			@users\set nick, User(ident, host)
+			@users\set nick, User(self, nick, ident or "", host or "")
 
 		-- Make sure channels and users both have links to each other
 		channel.users\set nick, @users\expect nick
@@ -145,7 +145,9 @@ IRCClient\add_handler '353', (prefix, args)=>
 IRCClient\add_handler '352', (prefix, args)=>
 	-- Result of WHO
 	_, user, host, _, nick, away = unpack args
-	client = @users\entry(nick)\or_insert_with -> User :user, :host
+	client = @users\entry(nick)\or_insert_with -> User self, nick, user, host
+	client.user = user
+	client.host = host
 	client.away = away\sub(1, 1) == "G" -- "H"ere or "G"one
 
 IRCClient\add_handler 'CHGHOST', (prefix, args)=>
@@ -178,4 +180,4 @@ IRCClient\add_handler 'QUIT', (prefix, args)=>
 IRCClient\add_handler 'PRIVMSG', priority: priority.HIGH, (prefix, args, tags={})=>
 	account_tag = @get_tag tags, key: "account"
 	if account_tag and prefix.nick and @users\contains_key prefix.nick
-		@users\expect(prefix.nick).account = account_tag.value
+		@users\expect(prefix.nick).account = Option account_tag.value

@@ -1,9 +1,11 @@
 import Map, Option from require 'lib.std'
 
 class User
-	new: (user, host, opts)=>
-		@user = input.user
-		@host = input.host
+	new: (bot, nick, user, host, opts={})=>
+		@_bot = assert bot
+		@nick = assert nick
+		@user = assert user
+		@host = assert host
 		@account = Option opts.account
 		@away = opts.away == true
 		@channels = Map opts.channels or {}

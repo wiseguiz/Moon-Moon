@@ -10,6 +10,8 @@ IRCClient\add_sender 'COMMAND_OK', (target, command_name, message, msgid)=>
 	if msgid
 		if @config.strip_colors
 			@send "PRIVMSG", target, "[#{command_name}] #{message}", "+draft/reply": msgid
+		else
+			@send "PRIVMSG", target, "[\00303#{command_name}\003] #{message}", "+draft/reply": msgid
 	else
 		if @config.strip_colors
 			@send "PRIVMSG", target, "[#{command_name}] #{message}"
@@ -68,8 +70,8 @@ IRCClient\add_command "test", async: true, (prefix, target, tags)=>
 	sleep 5
 
 	@users\get(nick)\and_then (client)->
-		if client.account != ""
-			@send_ok "Account name: #{client.account}" if client.account != ""
+		if client.account\is_some!
+			@send_ok "Account name: #{client.account\unwrap!}"
 		else
 			@send_err "Account not known for: #{nick}"
 

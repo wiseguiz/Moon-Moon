@@ -80,7 +80,7 @@ class IRCClient
 		tags <- '@' tag (';' tag)*
 		tag <- {|
 			{:is_client: {'+'} :}? -- check: if tag.is_client
-			{:vendor: {[^/]+} '/' :}?
+			{:vendor: {[^/ ]+} '/' :}?
 			{:key: {[^=; ]+} -> esc_tag :}
 			{:value: ('=' {[^; ]*} -> esc_tag) :}?
 		|}
@@ -438,9 +438,9 @@ class IRCClient
 	pcall: (fn, ...)=>
 		ok, err = xpcall fn, self\log_traceback, self, ...
 		if not ok
-			Logger.debug "Arguments:"
+			Logger.print "Arguments:"
 			for arg in *{...}
-				Logger.debug tostring arg
+				Logger.print tostring arg
 		return ok, err
 
 	--- Call a function without self and, when failed, print debug information
@@ -449,16 +449,16 @@ class IRCClient
 	pcall_bare: (fn, ...)=>
 		ok, err = xpcall fn, self\log_traceback, ...
 		if not ok
-			Logger.debug "Arguments:"
-			Logger.debug tostring arg for arg in *{...}
+			Logger.print "Arguments:"
+			Logger.print tostring arg for arg in *{...}
 		return ok, err
 
 	--- Print a traceback using the internal logging mechanism
 	-- @see IRCClient\log
 	log_traceback: (err)=>
 		err = tostring err
-		Logger.debug moonscript.errors.rewrite_traceback debug.traceback!, err
-		Logger.debug "#{Logger.level.error} ---"
+		Logger.print moonscript.errors.rewrite_traceback debug.traceback!, err
+		Logger.print "#{Logger.level.error} ---"
 		return err
 
 	--- Log message from IRC server (used in plugins)
