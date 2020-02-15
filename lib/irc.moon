@@ -354,7 +354,6 @@ class IRCClient
 		has_errors = false
 		errors = {}
 
-
 		for hook in *(@hooks\get hook_name, index: IRCClient.hooks)
 			has_run = true unless has_run
 			Logger.debug Logger.level.warn .. '--- Running global hook: ' .. hook_name
@@ -378,7 +377,7 @@ class IRCClient
 		---		has_errors = true if not has_errors
 		---		table.insert(errors, err)
 
-		Logger.debug Logger.level.error .. "*** Hook not found for #{command}" unless has_run
+		-- Logger.debug Logger.level.error .. "*** Hook not found for #{hook_name}" unless has_run
 
 		return has_errors, errors, has_run
 
