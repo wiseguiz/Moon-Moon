@@ -258,6 +258,10 @@ class Map
 	expect: (key, message)=>
 		@get(key)\expect message
 
+	--- Return a value expected to exist in the Map
+	unwrap: (key)=>
+		@get(key)\unwrap!
+
 	--- Set a `value` in the Map to an associated `key`
 	-- @param key
 	-- @param value
