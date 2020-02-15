@@ -32,6 +32,7 @@ IRCClient\add_handler 'AWAY', (prefix, args)=>
 		@fire_hook "USER.AWAY", user, user.away
 	else
 		user.away = Option!
+		@fire_hook "USER.BACK", user
 
 IRCClient\add_handler 'ACCOUNT', (prefix, args)=>
 	{:nick} = prefix
