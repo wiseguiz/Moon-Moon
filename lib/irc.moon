@@ -188,11 +188,11 @@ class IRCClient
 			-- is async, send typing until completed
 			if options.async
 				-- async, send @+draft/typing 
-				final_command = (prefix, target, line, ...)=>
+				final_command = (prefix, target, tags, ...)=>
 					@vars.typing_counter = 0 if not @vars.typing_counter
 					@vars.typing_counter += 1
 					@send 'TAGMSG', target, "+draft/typing": 'active'
-					@pcall command, prefix, target, line, ...
+					@pcall command, prefix, target, tags, ...
 					@vars.typing_counter -= 1
 					if @vars.typing_counter == 0
 						@send 'TAGMSG', target, "+draft/typing": 'done'
