@@ -23,7 +23,7 @@ load_modules = (folder)->
 			IRCClient\with_context path, assert moonscript.loadfile path
 
 load_modules_in_plugin_folders = ->
-	for module_folder in *{'plugins', 'modules'}
+	for module_folder in *{'handlers', 'plugins', 'modules', 'commands'}
 		full_path = wd .. '/' .. module_folder
 		load_modules full_path if lfs.attributes(full_path, 'mode') == 'directory'
 
