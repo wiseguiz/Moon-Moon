@@ -67,7 +67,7 @@ IRCClient\add_handler 'PRIVMSG', (prefix, args, tags)=>
 IRCClient\add_command "test", async: true, (prefix, target, tags)=>
 	{:nick} = prefix
 
-	sleep 5
+	sleep 1
 
 	@users\get(nick)\and_then (client)->
 		if client.account\is_some!
