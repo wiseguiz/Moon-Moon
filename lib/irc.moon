@@ -3,6 +3,7 @@
 
 re = require "re"
 socket = require 'cqueues.socket'
+errno = require 'cqueues.errno'
 Logger = require 'logger'
 
 moonscript = {
@@ -247,9 +248,14 @@ class IRCClient
 
 	--- Connect to the IRC server specified in the configuration
 	connect: ()=>
+		-- Clear internally managed state
+		@__is_pinging_timeout = nil
+
+		-- Reset old connection
 		if @socket
 			Logger.debug "Shutting down socket: #{tostring(@socket)}"
 			@socket\shutdown!
+
 		host = @config.server
 		port = @config.port
 		ssl  = @config.ssl
@@ -428,7 +434,12 @@ class IRCClient
 
 	--- Iterate over lines from a server and handle errors appropriately
 	loop: ()=>
-		for received_line in @socket\lines! do
+		for received_line, err in @socket\xlines(nil, nil, 180) do
+			assert(received_line or err == errno.ETIMEDOUT, errno[err])
+			if err == errno.ETIMEDOUT -- No input from server in n seconds
+				assert not @__is_pinging_timeout, errno[err]
+				@send_raw 'PING', 'test_ping_timeout'
+				@__is_pinging_timeout = true
 			@pcall @process_line, received_line, in_batch: false
 
 	--- Call a function and, when failed, print debug information
