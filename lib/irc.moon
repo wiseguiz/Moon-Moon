@@ -435,8 +435,11 @@ class IRCClient
 	--- Iterate over lines from a server and handle errors appropriately
 	loop: ()=>
 		for received_line, err in @socket\xlines(nil, nil, 180) do
-			assert(received_line or err == errno.ETIMEDOUT, errno[err])
+			-- if we get a non-timeout error, rethrow
+			assert received_line or err == errno.ETIMEDOUT, errno[err]
 			if err == errno.ETIMEDOUT -- No input from server in n seconds
+				-- we have ping timed out, throw the timeout, which will
+				-- trigger a reconnect (thus clearing @__is_pinging_timeout)
 				assert not @__is_pinging_timeout, errno[err]
 				@send_raw 'PING', 'test_ping_timeout'
 				@__is_pinging_timeout = true
